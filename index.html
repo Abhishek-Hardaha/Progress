@@ -63,9 +63,6 @@
       if (milestoneHit) {
         // Add glow animation class to the main card
         mainCard.classList.add('animate-milestone-glow');
-        // Launch motion graphic animation!
-        launchMilestoneAnimation();
-        
         // Remove the class after the animation finishes
         mainCard.addEventListener('animationend', () => {
           mainCard.classList.remove('animate-milestone-glow');
@@ -119,48 +116,6 @@
       updateUI(); 
     }
     
-    /**
-     * Creates and launches full-screen confetti particles.
-     */
-    function launchConfetti() {
-      const confettiCount = 100; // More particles for full screen
-      const colors = ['#FFFFFF']; // Only white
-
-      for (let i = 0; i < confettiCount; i++) {
-        const particle = document.createElement('div');
-        particle.classList.add('confetti-particle');
-
-        // Randomize properties
-        particle.style.left = `${Math.random() * 100}%`; // Start anywhere across the width
-        particle.style.backgroundColor = colors[0];
-        const animDuration = 4 + Math.random() * 3; // 4s to 7s duration
-        const animDelay = Math.random() * 2; // 0 to 2s delay
-        particle.style.animationDuration = `${animDuration}s`;
-        particle.style.animationDelay = `${animDelay}s`;
-        
-        // Add a bit of horizontal motion
-        const horizontalMove = (Math.random() - 0.5) * 200; // -100px to +100px
-        particle.style.setProperty('--horizontal-move', `${horizontalMove}px`);
-
-        // Append to the body for full-screen effect
-        document.body.appendChild(particle);
-
-        // Remove particle after animation
-        setTimeout(() => {
-          particle.remove();
-        }, (animDuration + animDelay) * 1000);
-      }
-    }
-
-    /**
-     * Triggers the milestone celebration.
-     */
-    function launchMilestoneAnimation() {
-      // Just launch the new confetti animation
-      launchConfetti();
-    }
-
-
     // --- Main Execution ---
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -248,8 +203,6 @@
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       /* bg-gray-900 is on the html tag, transparent here for embeds */
       background-color: transparent; 
-      /* Important for full-screen confetti */
-      overflow-x: hidden;
     }
     .transition-colors-all * {
       transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
@@ -306,32 +259,6 @@
       animation: milestoneGlow 0.8s ease-in-out;
     }
 
-    /* Animation for full-screen confetti */
-    @keyframes confetti-fall {
-      0% {
-        /* Start just above the viewport */
-        transform: translateY(-5vh) rotate(0deg);
-        opacity: 1;
-      }
-      100% {
-        /* Fall to the bottom of the viewport */
-        transform: translateY(100vh) rotate(720deg) translateX(var(--horizontal-move, 0px));
-        opacity: 0;
-      }
-    }
-
-    .confetti-particle {
-      position: absolute;
-      width: 8px;  /* Smaller balls */
-      height: 8px;
-      border-radius: 50%; /* Make it a ball */
-      opacity: 0;
-      animation-name: confetti-fall;
-      animation-timing-function: linear;
-      animation-fill-mode: forwards;
-      /* Add z-index to make sure it's on top */
-      z-index: 9999;
-    }
 
     /* SVG Circle Styles */
     .progress-circle-bg {
@@ -350,18 +277,11 @@
   <!-- Main container to center the widget -->
   <div class="flex items-center justify-center min-h-screen p-4">
     
-    <!-- 
-      Widget Card 
-      - Added relative and overflow-hidden (in case any child animations spill)
-    -->
-    <div class="bg-gray-800 p-6 rounded-xl shadow-2xl shadow-purple-900/60 text-center w-full max-w-xs transition-all duration-300 animate-load-in relative overflow-hidden">
+    <!-- Widget Card - Forced dark mode -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow-2xl shadow-purple-900/60 text-center w-full max-w-xs transition-all duration-300 animate-load-in">
       
-      <!-- 
-        Animation container removed as confetti is now full-screen (appended to body)
-      -->
-
       <!-- Input Fields -->
-      <div class="grid grid-cols-2 gap-4 mb-6 relative z-0"> <!-- Set z-0 to be behind full-screen confetti -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
         <!-- Current Value -->
         <div>
           <label for="current-input" class="block text-sm font-medium text-gray-300 mb-1">Current</label>
@@ -379,15 +299,12 @@
         <!-- Total Value -->
         <div>
           <label for="total-input" class="block text-sm font-medium text-gray-300 mb-1">Total</label>
-          <div class="flex items-center">
-            <input type="number" id="total-input" class="w-full text-center h-11 p-2 text-lg font-medium rounded-lg" value="100">
-          </div>
+          <input type="number" id="total-input" class="w-full text-center h-11 p-2 text-lg font-medium" value="100">
         </div>
-        
       </div>
 
       <!-- Circular Progress Bar -->
-      <div class="relative w-40 h-40 mx-auto mb-6 z-0"> <!-- Set z-0 to be behind full-screen confetti -->
+      <div class="relative w-40 h-40 mx-auto mb-6">
         <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
           <!-- Background Circle -->
           <circle
@@ -414,7 +331,7 @@
       </div>
 
       <!-- Reset Button -->
-      <button id="reset-btn" class="text-xs text-gray-500 hover:text-indigo-400 mt-2 transition-colors relative z-0"> <!-- Set z-0 to be behind full-screen confetti -->
+      <button id="reset-btn" class="text-xs text-gray-500 hover:text-indigo-400 mt-2 transition-colors">
         Reset Current
       </button>
 
@@ -423,4 +340,6 @@
 
 </body>
 </html>
+
+
 
