@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Tracker Widget</title>
+<!-- Correct Tailwind CSS CDN link -->
+<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
+
+<style>
+/* Base styles for the progress circle */
+.progress-circle {
+width: 150px;
+height: 150px;
+transform: rotate(-90deg);
+}
+
+/* Background track */
+.progress-circle-bg {
+  fill: none;
+  stroke: #374151; /* gray-700 */
+  stroke-width: 10;
+}
+
+/* Progress track */
+.progress-circle-fg {
+  fill: none;
+  stroke: #a855f7; /* purple-500 */
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 339.29; /* 2 * PI * 54 */
+  stroke-dashoffset: 339.29;
+  /* Smooth transition for progress changes */
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Add a subtle drop shadow for glow */
+  filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.7)); 
+}
+
+/* Percentage text &quot;pop&quot; animation */
+@keyframes textPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.text-pop {
+  animation: textPop 0.3s ease-out;
+}
+
+/* Confetti animation */
+@keyframes confettiRain {
+  0% { transform: translateY(-100%) scale(1); opacity: 1; }
+  100% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+}
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #fff;
+  top: 0;
+  opacity: 0;
+  animation: confettiRain 3s linear forwards;
+}
+
+/* Custom input styling */
+.custom-input {
+  background-color: #1f2937; /* gray-800 */
+  border: 1px solid #4b5563; /* gray-600 */
+  color: white;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+.custom-input:focus {
+  outline: none;
+  border-color: #a855f7; /* purple-500 */
+  box-shadow: 0 0 0 2px #a855f7; /* purple-500 ring */
+}
+
+/* Remove number input arrows */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
+</style>
+
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4 overflow-hidden">
+
+<!-- Main Widget Card -->
+
+<div id="widget-card" class="relative w-full max-w-sm p-6 pt-8
+bg-gray-800
+rounded-3xl
+shadow-2xl shadow-purple-900/20
+border border-gray-700/50
+opacity-0 translate-y-2 transition-all duration-500 ease-out"
+style="transform-origin: center;">
+
+<!-- Confetti Container -->
+<div id="confetti-container" class="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none"></div>
+
+<!-- Progress Circle -->
+<div class="relative flex justify-center mb-6">
+  <svg class="progress-circle" viewBox="0 0 120 120">
+    <!-- Background Track -->
+    <circle class="progress-circle-bg" cx="60" cy="60" r="54" />
+    <!-- Foreground Progress -->
+    <circle id="progress-fg" class="progress-circle-fg" cx="60" cy="60" r="54" />
+  </svg>
+  <!-- Percentage Text -->
+  <div id="percentage-text" class="absolute inset-0 flex items-center justify-center 
+    text-3xl font-bold text-white">
+    0%
+  </div>
+</div>
+
+<!-- Input Fields -->
+<div class="flex justify-around mb-6 space-x-4">
+  <!-- Current Value -->
+  <div class="flex flex-col items-center">
+    <label for="current-value" class="text-xs font-medium text-gray-400 mb-1">Current</label>
+    <input id="current-value" type="number" class="w-20 p-2 rounded-lg custom-input" value="0">
+  </div>
+  
+  <!-- Total Value -->
+  <div class="flex flex-col items-center">
+    <label for="total-value" class="text-xs font-medium text-gray-400 mb-1">Total</label>
+    <input id="total-value" type="number" class="w-20 p-2 rounded-lg custom-input" value="100">
+  </div>
+</div>
+
+<!-- Control Buttons -->
+<div class="flex justify-center space-x-4">
+  <!-- Minus Button -->
+  <button id="btn-minus" class="w-14 h-14 flex items-center justify-center 
+    font-bold text-3xl text-white 
+    bg-purple-600 
+    rounded-full 
+    shadow-lg shadow-purple-500/30
+    transition-all duration-200 ease-out
+    hover:bg-purple-500 hover:scale-105
+    active:scale-95 active:bg-purple-700 active:shadow-inner">
+    -
+  </button>
+  <!-- Plus Button -->
+  <button id="btn-plus" class="w-14 h-14 flex items-center justify-center 
+    font-bold text-3xl text-white 
+    bg-purple-600 
+    rounded-full 
+    shadow-lg shadow-purple-500/30
+    transition-all duration-200 ease-out
+    hover:bg-purple-500 hover:scale-105
+    active:scale-95 active:bg-purple-700 active:shadow-inner">
+    +
+  </button>
+</div>
+
+
+</div>
+
+<script>
+// Encapsulate all logic in an object
+const ProgressTracker = {
+// DOM Elements
+elements: {
+card: document.getElementById('widget-card'),
+currentInput: document.getElementById('current-value'),
+totalInput: document.getElementById('total-value'),
+plusBtn: document.getElementById('btn-plus'),
+minusBtn: document.getElementById('btn-minus'),
+progressFg: document.getElementById('progress-fg'),
+percentageText: document.getElementById('percentage-text'),
+confettiContainer: document.getElementById('confetti-container'),
+},
+
+  // State
+  state: {
+    current: 0,
+    total: 100,
+    circumference: 339.29, // 2 * PI * 54
+    lastMilestone: 0,
+    isInitialLoad: true, // Flag to prevent animation on load
+  },
+
+  // Initialization
+  init() {
+    this.loadState();
+    this.addEventListeners();
+    this.updateUI(true); // Pass true to skip initial animation
+    this.animateCardLoad();
+    this.state.isInitialLoad = false;
+  },
+
+  // Event Listeners
+  addEventListeners() {
+    this.elements.plusBtn.addEventListener(&#39;click&#39;, () =&gt; this.adjustCurrent(1));
+    this.elements.minusBtn.addEventListener(&#39;click&#39;, () =&gt; this.adjustCurrent(-1));
+    this.elements.currentInput.addEventListener(&#39;change&#39;, this.handleInputChange);
+    this.elements.totalInput.addEventListener(&#39;change&#39;, this.handleInputChange);
+  },
+
+  // --- State Management ---
+  
+  loadState() {
+    this.state.current = parseInt(localStorage.getItem(&#39;progressCurrent&#39;) || 0);
+    this.state.total = parseInt(localStorage.getItem(&#39;progressTotal&#39;) || 100);
+    this.state.lastMilestone = this.calculatePercentage(this.state.current, this.state.total);
+  },
+
+  saveState() {
+    localStorage.setItem(&#39;progressCurrent&#39;, this.state.current);
+    localStorage.setItem(&#39;progressTotal&#39;, this.state.total);
+  },
+
+  // --- Event Handlers ---
+
+  adjustCurrent(amount) {
+    let newCurrent = this.state.current + amount;
+    
+    // Clamp values
+    if (newCurrent &lt; 0) newCurrent = 0;
+    if (this.state.total &gt; 0 &amp;&amp; newCurrent &gt; this.state.total) newCurrent = this.state.total;
+    
+    this.state.current = newCurrent;
+    this.updateUI();
+  },
+  
+  handleInputChange: (e) =&gt; {
+    let current = parseInt(ProgressTracker.elements.currentInput.value) || 0;
+    let total = parseInt(ProgressTracker.elements.totalInput.value) || 100;
+
+    if (total &lt;= 0) total = 100; // Prevent division by zero
+    if (current &lt; 0) current = 0;
+    if (current &gt; total) current = total;
+
+    ProgressTracker.state.current = current;
+    ProgressTracker.state.total = total;
+    
+    ProgressTracker.updateUI();
+  },
+
+  // --- UI &amp; Animations ---
+
+  updateUI(skipAnimation = false) {
+    // Ensure values are numbers
+    this.state.current = Number(this.state.current);
+    this.state.total = Number(this.state.total);
+
+    // Update input fields
+    this.elements.currentInput.value = this.state.current;
+    this.elements.totalInput.value = this.state.total;
+    
+    // Calculate percentage
+    const percentage = this.calculatePercentage(this.state.current, this.state.total);
+    
+    // Update progress circle
+    const offset = this.state.circumference - (percentage / 100) * this.state.circumference;
+    this.elements.progressFg.style.strokeDashoffset = offset;
+    
+    // Update percentage text
+    this.elements.percentageText.textContent = `${Math.round(percentage)}%`;
+    
+    if (!skipAnimation &amp;&amp; !this.state.isInitialLoad) {
+      // Animate text &quot;pop&quot;
+      this.elements.percentageText.classList.remove(&#39;text-pop&#39;);
+      void this.elements.percentageText.offsetWidth; // Trigger reflow
+      this.elements.percentageText.classList.add(&#39;text-pop&#39;);
+    }
+
+    // Check for milestones
+    this.checkMilestones(percentage);
+    
+    // Save the new state
+    this.saveState();
+  },
+
+  calculatePercentage(current, total) {
+    if (total === 0) return 0;
+    return (current / total) * 100;
+  },
+  
+  animateCardLoad() {
+    // Animate card on load
+    requestAnimationFrame(() =&gt; {
+      this.elements.card.style.opacity = &#39;1&#39;;
+      this.elements.card.style.transform = &#39;translateY(0)&#39;;
+    });
+  },
+
+  // --- Milestone Animations ---
+
+  checkMilestones(newPercentage) {
+    if (this.state.isInitialLoad) return; // Don&#39;t run on first load
+    
+    const milestones = [25, 50, 75, 100];
+    let triggerAnimation = false;
+
+    for (const ms of milestones) {
+      // Check if we just crossed this milestone
+      if (newPercentage &gt;= ms &amp;&amp; this.state.lastMilestone &lt; ms) {
+        triggerAnimation = true;
+        break;
+      }
+    }
+    
+    // Special case: reset milestone check if progress drops below 25
+    if (newPercentage &lt; 25) {
+        this.state.lastMilestone = newPercentage;
+    } else if (triggerAnimation) {
+        this.runConfettiAnimation();
+        this.state.lastMilestone = newPercentage; // Update last milestone
+    } else if (newPercentage &gt; this.state.lastMilestone) {
+        // Update milestone even if no animation, to prevent re-triggering
+        this.state.lastMilestone = newPercentage;
+    }
+  },
+
+  runConfettiAnimation() {
+    this.elements.confettiContainer.innerHTML = &#39;&#39;; // Clear old confetti
+    
+    for (let i = 0; i &lt; 50; i++) {
+      const confetti = document.createElement(&#39;div&#39;);
+      confetti.classList.add(&#39;confetti&#39;);
+      confetti.style.left = `${Math.random() * 100}%`;
+      confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+      confetti.style.animationDelay = `${Math.random() * 2}s`;
+      this.elements.confettiContainer.appendChild(confetti);
+    }
+  }
+};
+
+// Run the app
+document.addEventListener(&#39;DOMContentLoaded&#39;, () =&gt; {
+  ProgressTracker.init();
+});
+
+
+</script>
+
+</body>
+</html>
