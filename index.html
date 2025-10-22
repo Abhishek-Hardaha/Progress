@@ -1,348 +1,426 @@
 <!DOCTYPE html>
-
-<html lang="en">
+<html lang="en" class="bg-gray-900"> <!-- Page background dark -->
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Progress Tracker Widget</title>
-<!-- Correct Tailwind CSS CDN link -->
-<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
-
-<style>
-/* Base styles for the progress circle */
-.progress-circle {
-width: 150px;
-height: 150px;
-transform: rotate(-90deg);
-}
-
-/* Background track */
-.progress-circle-bg {
-  fill: none;
-  stroke: #374151; /* gray-700 */
-  stroke-width: 10;
-}
-
-/* Progress track */
-.progress-circle-fg {
-  fill: none;
-  stroke: #a855f7; /* purple-500 */
-  stroke-width: 10;
-  stroke-linecap: round;
-  stroke-dasharray: 339.29; /* 2 * PI * 54 */
-  stroke-dashoffset: 339.29;
-  /* Smooth transition for progress changes */
-  transition: stroke-dashoffset 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  /* Add a subtle drop shadow for glow */
-  filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.7)); 
-}
-
-/* Percentage text &quot;pop&quot; animation */
-@keyframes textPop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-.text-pop {
-  animation: textPop 0.3s ease-out;
-}
-
-/* Confetti animation */
-@keyframes confettiRain {
-  0% { transform: translateY(-100%) scale(1); opacity: 1; }
-  100% { transform: translateY(100vh) scale(0.5); opacity: 0; }
-}
-.confetti {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background-color: #fff;
-  top: 0;
-  opacity: 0;
-  animation: confettiRain 3s linear forwards;
-}
-
-/* Custom input styling */
-.custom-input {
-  background-color: #1f2937; /* gray-800 */
-  border: 1px solid #4b5563; /* gray-600 */
-  color: white;
-  text-align: center;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-.custom-input:focus {
-  outline: none;
-  border-color: #a855f7; /* purple-500 */
-  box-shadow: 0 0 0 2px #a855f7; /* purple-500 ring */
-}
-
-/* Remove number input arrows */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-input[type=number] {
-  -moz-appearance: textfield;
-}
-
-
-</style>
-
-</head>
-<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4 overflow-hidden">
-
-<!-- Main Widget Card -->
-
-<div id="widget-card" class="relative w-full max-w-sm p-6 pt-8
-bg-gray-800
-rounded-3xl
-shadow-2xl shadow-purple-900/20
-border border-gray-700/50
-opacity-0 translate-y-2 transition-all duration-500 ease-out"
-style="transform-origin: center;">
-
-<!-- Confetti Container -->
-<div id="confetti-container" class="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none"></div>
-
-<!-- Progress Circle -->
-<div class="relative flex justify-center mb-6">
-  <svg class="progress-circle" viewBox="0 0 120 120">
-    <!-- Background Track -->
-    <circle class="progress-circle-bg" cx="60" cy="60" r="54" />
-    <!-- Foreground Progress -->
-    <circle id="progress-fg" class="progress-circle-fg" cx="60" cy="60" r="54" />
-  </svg>
-  <!-- Percentage Text -->
-  <div id="percentage-text" class="absolute inset-0 flex items-center justify-center 
-    text-3xl font-bold text-white">
-    0%
-  </div>
-</div>
-
-<!-- Input Fields -->
-<div class="flex justify-around mb-6 space-x-4">
-  <!-- Current Value -->
-  <div class="flex flex-col items-center">
-    <label for="current-value" class="text-xs font-medium text-gray-400 mb-1">Current</label>
-    <input id="current-value" type="number" class="w-20 p-2 rounded-lg custom-input" value="0">
-  </div>
-  
-  <!-- Total Value -->
-  <div class="flex flex-col items-center">
-    <label for="total-value" class="text-xs font-medium text-gray-400 mb-1">Total</label>
-    <input id="total-value" type="number" class="w-20 p-2 rounded-lg custom-input" value="100">
-  </div>
-</div>
-
-<!-- Control Buttons -->
-<div class="flex justify-center space-x-4">
-  <!-- Minus Button -->
-  <button id="btn-minus" class="w-14 h-14 flex items-center justify-center 
-    font-bold text-3xl text-white 
-    bg-purple-600 
-    rounded-full 
-    shadow-lg shadow-purple-500/30
-    transition-all duration-200 ease-out
-    hover:bg-purple-500 hover:scale-105
-    active:scale-95 active:bg-purple-700 active:shadow-inner">
-    -
-  </button>
-  <!-- Plus Button -->
-  <button id="btn-plus" class="w-14 h-14 flex items-center justify-center 
-    font-bold text-3xl text-white 
-    bg-purple-600 
-    rounded-full 
-    shadow-lg shadow-purple-500/30
-    transition-all duration-200 ease-out
-    hover:bg-purple-500 hover:scale-105
-    active:scale-95 active:bg-purple-700 active:shadow-inner">
-    +
-  </button>
-</div>
-
-
-</div>
-
-<script>
-// Encapsulate all logic in an object
-const ProgressTracker = {
-// DOM Elements
-elements: {
-card: document.getElementById('widget-card'),
-currentInput: document.getElementById('current-value'),
-totalInput: document.getElementById('total-value'),
-plusBtn: document.getElementById('btn-plus'),
-minusBtn: document.getElementById('btn-minus'),
-progressFg: document.getElementById('progress-fg'),
-percentageText: document.getElementById('percentage-text'),
-confettiContainer: document.getElementById('confetti-container'),
-},
-
-  // State
-  state: {
-    current: 0,
-    total: 100,
-    circumference: 339.29, // 2 * PI * 54
-    lastMilestone: 0,
-    isInitialLoad: true, // Flag to prevent animation on load
-  },
-
-  // Initialization
-  init() {
-    this.loadState();
-    this.addEventListeners();
-    this.updateUI(true); // Pass true to skip initial animation
-    this.animateCardLoad();
-    this.state.isInitialLoad = false;
-  },
-
-  // Event Listeners
-  addEventListeners() {
-    this.elements.plusBtn.addEventListener(&#39;click&#39;, () =&gt; this.adjustCurrent(1));
-    this.elements.minusBtn.addEventListener(&#39;click&#39;, () =&gt; this.adjustCurrent(-1));
-    this.elements.currentInput.addEventListener(&#39;change&#39;, this.handleInputChange);
-    this.elements.totalInput.addEventListener(&#39;change&#39;, this.handleInputChange);
-  },
-
-  // --- State Management ---
-  
-  loadState() {
-    this.state.current = parseInt(localStorage.getItem(&#39;progressCurrent&#39;) || 0);
-    this.state.total = parseInt(localStorage.getItem(&#39;progressTotal&#39;) || 100);
-    this.state.lastMilestone = this.calculatePercentage(this.state.current, this.state.total);
-  },
-
-  saveState() {
-    localStorage.setItem(&#39;progressCurrent&#39;, this.state.current);
-    localStorage.setItem(&#39;progressTotal&#39;, this.state.total);
-  },
-
-  // --- Event Handlers ---
-
-  adjustCurrent(amount) {
-    let newCurrent = this.state.current + amount;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progress Tracker</title>
+  <!-- Load Tailwind CSS for modern styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Main widget script -->
+  <script type_="" module="">
+    // --- Widget Configuration ---
+    const STEP = 1; // Increment by 1
+    const STORAGE_KEY_CURRENT = 'notionProgressWidgetCurrent';
+    const STORAGE_KEY_TOTAL = 'notionProgressWidgetTotal';
     
-    // Clamp values
-    if (newCurrent &lt; 0) newCurrent = 0;
-    if (this.state.total &gt; 0 &amp;&amp; newCurrent &gt; this.state.total) newCurrent = this.state.total;
-    
-    this.state.current = newCurrent;
-    this.updateUI();
-  },
-  
-  handleInputChange: (e) =&gt; {
-    let current = parseInt(ProgressTracker.elements.currentInput.value) || 0;
-    let total = parseInt(ProgressTracker.elements.totalInput.value) || 100;
+    let currentValue = 0;
+    let totalValue = 100;
+    let lastProgressPercent = 0; // Store the previous progress percentage
 
-    if (total &lt;= 0) total = 100; // Prevent division by zero
-    if (current &lt; 0) current = 0;
-    if (current &gt; total) current = total;
+    // --- DOM Elements ---
+    let progressCircleFG, progressText, plusButton, minusButton, resetButton, currentInput, totalInput, mainCard;
+    const CIRCLE_RADIUS = 40;
+    const CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
 
-    ProgressTracker.state.current = current;
-    ProgressTracker.state.total = total;
-    
-    ProgressTracker.updateUI();
-  },
+    /**
+     * Updates the UI (text and circle) based on the current and total values.
+     */
+    function updateUI() {
+      if (!progressCircleFG || !progressText || !minusButton || !plusButton || !currentInput || !totalInput || !mainCard) return;
 
-  // --- UI &amp; Animations ---
+      // Handle division by zero or invalid total
+      let currentProgressPercent = 0;
+      if (totalValue > 0) {
+        currentProgressPercent = (currentValue / totalValue) * 100;
+      }
+      
+      // --- SVG Circle Animation ---
+      // Calculate the offset
+      const offset = CIRCUMFERENCE - (currentProgressPercent / 100) * CIRCUMFERENCE;
+      progressCircleFG.style.strokeDashoffset = offset;
+      
+      // --- Text Update ---
+      progressText.textContent = `${Math.round(currentProgressPercent)}%`;
+      
+      // --- Animate Text Pop ---
+      // Remove class to allow re-triggering
+      progressText.classList.remove('animate-text-pop');
+      // Force a reflow (browser trick) to restart the animation
+      void progressText.offsetWidth; 
+      progressText.classList.add('animate-text-pop');
+      
+      // --- Check for Milestones ---
+      const milestones = [25, 50, 75, 100];
+      let milestoneHit = false;
+      for (const ms of milestones) {
+        // Check if we just crossed a milestone
+        if (currentProgressPercent >= ms && lastProgressPercent < ms) {
+          milestoneHit = true;
+          break;
+        }
+      }
 
-  updateUI(skipAnimation = false) {
-    // Ensure values are numbers
-    this.state.current = Number(this.state.current);
-    this.state.total = Number(this.state.total);
+      if (milestoneHit) {
+        // Add glow animation class to the main card
+        mainCard.classList.add('animate-milestone-glow');
+        // Launch motion graphic animation!
+        launchMilestoneAnimation();
+        
+        // Remove the class after the animation finishes
+        mainCard.addEventListener('animationend', () => {
+          mainCard.classList.remove('animate-milestone-glow');
+        }, { once: true }); // Automatically remove listener after it runs
+      }
+      
+      // Update the "last" progress to the current one for the next check
+      lastProgressPercent = currentProgressPercent;
 
-    // Update input fields
-    this.elements.currentInput.value = this.state.current;
-    this.elements.totalInput.value = this.state.total;
+      // Update input fields
+      currentInput.value = currentValue;
+      totalInput.value = totalValue;
+      
+      // Disable/enable buttons
+      minusButton.disabled = currentValue <= 0;
+      plusButton.disabled = currentValue >= totalValue;
+    }
     
-    // Calculate percentage
-    const percentage = this.calculatePercentage(this.state.current, this.state.total);
-    
-    // Update progress circle
-    const offset = this.state.circumference - (percentage / 100) * this.state.circumference;
-    this.elements.progressFg.style.strokeDashoffset = offset;
-    
-    // Update percentage text
-    this.elements.percentageText.textContent = `${Math.round(percentage)}%`;
-    
-    if (!skipAnimation &amp;&amp; !this.state.isInitialLoad) {
-      // Animate text &quot;pop&quot;
-      this.elements.percentageText.classList.remove(&#39;text-pop&#39;);
-      void this.elements.percentageText.offsetWidth; // Trigger reflow
-      this.elements.percentageText.classList.add(&#39;text-pop&#39;);
+    /**
+     * Saves the current and total values to localStorage.
+     */
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY_CURRENT, currentValue.toString());
+      localStorage.setItem(STORAGE_KEY_TOTAL, totalValue.toString());
     }
 
-    // Check for milestones
-    this.checkMilestones(percentage);
+    /**
+     * Loads the values from localStorage when the widget starts.
+     */
+    function loadProgress() {
+      const savedCurrent = localStorage.getItem(STORAGE_KEY_CURRENT);
+      const savedTotal = localStorage.getItem(STORAGE_KEY_TOTAL);
+      
+      currentValue = savedCurrent !== null ? parseInt(savedCurrent, 10) : 0;
+      totalValue = savedTotal !== null ? parseInt(savedTotal, 10) : 100;
+      
+      // Ensure current value isn't higher than total on load
+      if (currentValue > totalValue) {
+        currentValue = totalValue;
+      }
+      
+      // Set the initial "last progress" *before* calling updateUI
+      // This prevents milestone animations from firing on load
+      if (totalValue > 0) {
+        lastProgressPercent = (currentValue / totalValue) * 100;
+      } else {
+        lastProgressPercent = 0;
+      }
+      
+      // Render the UI with the loaded values
+      updateUI(); 
+    }
     
-    // Save the new state
-    this.saveState();
-  },
+    /**
+     * Creates and launches full-screen confetti particles.
+     */
+    function launchConfetti() {
+      const confettiCount = 100; // More particles for full screen
+      const colors = ['#FFFFFF']; // Only white
 
-  calculatePercentage(current, total) {
-    if (total === 0) return 0;
-    return (current / total) * 100;
-  },
-  
-  animateCardLoad() {
-    // Animate card on load
-    requestAnimationFrame(() =&gt; {
-      this.elements.card.style.opacity = &#39;1&#39;;
-      this.elements.card.style.transform = &#39;translateY(0)&#39;;
-    });
-  },
+      for (let i = 0; i < confettiCount; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('confetti-particle');
 
-  // --- Milestone Animations ---
+        // Randomize properties
+        particle.style.left = `${Math.random() * 100}%`; // Start anywhere across the width
+        particle.style.backgroundColor = colors[0];
+        const animDuration = 4 + Math.random() * 3; // 4s to 7s duration
+        const animDelay = Math.random() * 2; // 0 to 2s delay
+        particle.style.animationDuration = `${animDuration}s`;
+        particle.style.animationDelay = `${animDelay}s`;
+        
+        // Add a bit of horizontal motion
+        const horizontalMove = (Math.random() - 0.5) * 200; // -100px to +100px
+        particle.style.setProperty('--horizontal-move', `${horizontalMove}px`);
 
-  checkMilestones(newPercentage) {
-    if (this.state.isInitialLoad) return; // Don&#39;t run on first load
-    
-    const milestones = [25, 50, 75, 100];
-    let triggerAnimation = false;
+        // Append to the body for full-screen effect
+        document.body.appendChild(particle);
 
-    for (const ms of milestones) {
-      // Check if we just crossed this milestone
-      if (newPercentage &gt;= ms &amp;&amp; this.state.lastMilestone &lt; ms) {
-        triggerAnimation = true;
-        break;
+        // Remove particle after animation
+        setTimeout(() => {
+          particle.remove();
+        }, (animDuration + animDelay) * 1000);
       }
     }
-    
-    // Special case: reset milestone check if progress drops below 25
-    if (newPercentage &lt; 25) {
-        this.state.lastMilestone = newPercentage;
-    } else if (triggerAnimation) {
-        this.runConfettiAnimation();
-        this.state.lastMilestone = newPercentage; // Update last milestone
-    } else if (newPercentage &gt; this.state.lastMilestone) {
-        // Update milestone even if no animation, to prevent re-triggering
-        this.state.lastMilestone = newPercentage;
+
+    /**
+     * Triggers the milestone celebration.
+     */
+    function launchMilestoneAnimation() {
+      // Just launch the new confetti animation
+      launchConfetti();
     }
-  },
 
-  runConfettiAnimation() {
-    this.elements.confettiContainer.innerHTML = &#39;&#39;; // Clear old confetti
+
+    // --- Main Execution ---
     
-    for (let i = 0; i &lt; 50; i++) {
-      const confetti = document.createElement(&#39;div&#39;);
-      confetti.classList.add(&#39;confetti&#39;);
-      confetti.style.left = `${Math.random() * 100}%`;
-      confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
-      confetti.style.animationDelay = `${Math.random() * 2}s`;
-      this.elements.confettiContainer.appendChild(confetti);
+    document.addEventListener('DOMContentLoaded', () => {
+      // Get references to all the interactive elements
+      progressCircleFG = document.getElementById('progress-circle-fg');
+      progressText = document.getElementById('progress-text');
+      plusButton = document.getElementById('plus-btn');
+      minusButton = document.getElementById('minus-btn');
+      resetButton = document.getElementById('reset-btn');
+      currentInput = document.getElementById('current-input');
+      totalInput = document.getElementById('total-input');
+      mainCard = document.querySelector('.animate-load-in'); // Get the main card
+
+      // --- Initialize SVG Circle ---
+      progressCircleFG.style.strokeDasharray = `${CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+      progressCircleFG.style.strokeDashoffset = CIRCUMFERENCE;
+
+      // --- Event Listeners ---
+      
+      // Text Input Listeners
+      currentInput.addEventListener('input', () => {
+        let val = parseInt(currentInput.value, 10);
+        if (isNaN(val) || val < 0) {
+          val = 0;
+        }
+        // Cap current value at total value
+        currentValue = Math.min(val, totalValue);
+        
+        updateUI();
+        saveProgress();
+      });
+      
+      totalInput.addEventListener('input', () => {
+        let val = parseInt(totalInput.value, 10);
+        if (isNaN(val) || val < 0) {
+          val = 0; // Or 1, to avoid division by zero
+        }
+        totalValue = val;
+        
+        // If total is lowered, cap current value
+        if (currentValue > totalValue) {
+          currentValue = totalValue;
+        }
+        
+        updateUI();
+        saveProgress();
+      });
+
+      // Button Listeners
+      plusButton.addEventListener('click', () => {
+        if (currentValue < totalValue) {
+          currentValue = Math.min(currentValue + STEP, totalValue);
+          updateUI();
+          saveProgress();
+        }
+      });
+
+      minusButton.addEventListener('click', () => {
+        if (currentValue > 0) {
+          currentValue = Math.max(currentValue - STEP, 0);
+          updateUI();
+          saveProgress();
+        }
+      });
+
+      resetButton.addEventListener('click', () => {
+        currentValue = 0;
+        // We don't reset total, just current
+      // Check if this resets a milestone
+      const newPercent = (totalValue > 0) ? (currentValue / totalValue) * 100 : 0;
+      lastProgressPercent = newPercent;
+      
+      updateUI();
+      saveProgress();
+      });
+      
+      // Load initial progress from localStorage
+      loadProgress();
+    });
+  </script>
+  
+  <style>
+    /* Ensure the widget blends into Notion's UI */
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      /* bg-gray-900 is on the html tag, transparent here for embeds */
+      background-color: transparent; 
+      /* Important for full-screen confetti */
+      overflow-x: hidden;
     }
-  }
-};
+    .transition-colors-all * {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    
+      /* Style for number inputs */
+    input[type="number"] {
+      -moz-appearance: textfield; /* Firefox */
+      background-color: #4B5563; /* gray-600 */
+      color: #F3F4F6; /* gray-100 */
+      border: 1px solid #374151; /* gray-700 */
+      border-radius: 0.5rem; /* rounded-lg */
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"]:focus {
+      outline: 2px solid #8b5cf6; /* purple-500 */
+      border-color: transparent;
+      box-shadow: none;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease; /* Added transition */
+    }
+    
+    /* Animation for card load-in */
+    @keyframes fadeInScaleUp {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-load-in {
+      animation: fadeInScaleUp 0.5s ease-out forwards;
+    }
 
-// Run the app
-document.addEventListener(&#39;DOMContentLoaded&#39;, () =&gt; {
-  ProgressTracker.init();
-});
+    /* --- New Animations --- */
 
+    /* Animation for the percentage text "pop" */
+    @keyframes textPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); color: #c4b5fd; } /* purple-300 */
+      100% { transform: scale(1); }
+    }
+    .animate-text-pop {
+      animation: textPop 0.4s ease-out;
+    }
 
-</script>
+    /* Animation for the card "glow" on milestone */
+    @keyframes milestoneGlow {
+      0% { outline: 3px solid rgba(196, 181, 253, 0); outline-offset: 4px; }
+      50% { outline: 3px solid rgba(196, 181, 253, 0.8); outline-offset: 8px; } /* purple-300 */
+      100% { outline: 3px solid rgba(196, 181, 253, 0); outline-offset: 4px; }
+    }
+    .animate-milestone-glow {
+      animation: milestoneGlow 0.8s ease-in-out;
+    }
+
+    /* Animation for full-screen confetti */
+    @keyframes confetti-fall {
+      0% {
+        /* Start just above the viewport */
+        transform: translateY(-5vh) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        /* Fall to the bottom of the viewport */
+        transform: translateY(100vh) rotate(720deg) translateX(var(--horizontal-move, 0px));
+        opacity: 0;
+      }
+    }
+
+    .confetti-particle {
+      position: absolute;
+      width: 8px;  /* Smaller balls */
+      height: 8px;
+      border-radius: 50%; /* Make it a ball */
+      opacity: 0;
+      animation-name: confetti-fall;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+      /* Add z-index to make sure it's on top */
+      z-index: 9999;
+    }
+
+    /* SVG Circle Styles */
+    .progress-circle-bg {
+      stroke: #374151; /* gray-700 */
+    }
+    .progress-circle-fg {
+      stroke: #a78bfa; /* purple-400 */
+      stroke-linecap: round; /* Make the line end rounded */
+      transition: stroke-dashoffset 0.5s cubic-bezier(0.64, 0, 0.35, 1); /* Smooth animation */
+      filter: drop-shadow(0 2px 4px rgba(167, 139, 250, 0.5)); /* Added glow */
+    }
+  </style>
+</head>
+<body class="bg-transparent transition-colors-all">
+
+  <!-- Main container to center the widget -->
+  <div class="flex items-center justify-center min-h-screen p-4">
+    
+    <!-- 
+      Widget Card 
+      - Added relative and overflow-hidden (in case any child animations spill)
+    -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow-2xl shadow-purple-900/60 text-center w-full max-w-xs transition-all duration-300 animate-load-in relative overflow-hidden">
+      
+      <!-- 
+        Animation container removed as confetti is now full-screen (appended to body)
+      -->
+
+      <!-- Input Fields -->
+      <div class="grid grid-cols-2 gap-4 mb-6 relative z-0"> <!-- Set z-0 to be behind full-screen confetti -->
+        <!-- Current Value -->
+        <div>
+          <label for="current-input" class="block text-sm font-medium text-gray-300 mb-1">Current</label>
+          <div class="flex items-center">
+            <button id="minus-btn" class="bg-indigo-600 text-white rounded-l-lg p-2 h-11 w-10 flex items-center justify-center text-xl font-bold hover:bg-indigo-700 active:scale-95 disabled:opacity-50 transition-all duration-200 hover:scale-105">
+              -
+            </button>
+            <input type="number" id="current-input" class="w-full text-center h-11 p-2 text-lg font-medium" value="0">
+            <button id="plus-btn" class="bg-indigo-600 text-white rounded-r-lg p-2 h-11 w-10 flex items-center justify-center text-xl font-bold hover:bg-indigo-700 active:scale-95 disabled:opacity-50 transition-all duration-200 hover:scale-105">
+              +
+            </button>
+          </div>
+        </div>
+        
+        <!-- Total Value -->
+        <div>
+          <label for="total-input" class="block text-sm font-medium text-gray-300 mb-1">Total</label>
+          <div class="flex items-center">
+            <input type="number" id="total-input" class="w-full text-center h-11 p-2 text-lg font-medium rounded-lg" value="100">
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- Circular Progress Bar -->
+      <div class="relative w-40 h-40 mx-auto mb-6 z-0"> <!-- Set z-0 to be behind full-screen confetti -->
+        <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+          <!-- Background Circle -->
+          <circle
+            class="progress-circle-bg"
+            stroke-width="10"
+            cx="50"
+            cy="50"
+            r="40"
+            fill="transparent"
+          />
+          <!-- Foreground (Progress) Circle -->
+          <circle
+            id="progress-circle-fg"
+            class="progress-circle-fg"
+            stroke-width="10"
+            cx="50"
+            cy="50"
+            r="40"
+            fill="transparent"
+          />
+        </svg>
+        <!-- Progress text (absolutely positioned in the center) -->
+        <span id="progress-text" class="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-100">0%</span>
+      </div>
+
+      <!-- Reset Button -->
+      <button id="reset-btn" class="text-xs text-gray-500 hover:text-indigo-400 mt-2 transition-colors relative z-0"> <!-- Set z-0 to be behind full-screen confetti -->
+        Reset Current
+      </button>
+
+    </div>
+  </div>
 
 </body>
 </html>
+
