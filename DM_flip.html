@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mathematical Logic Flashcards</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    /* Custom Animations & 3D Flip Styles */
+    .flashcard-inner {
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .flashcard-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+    .flashcard-face {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .flashcard-back {
+      transform: rotateY(180deg);
+    }
+    
+    @keyframes subtleShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: subtleShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @keyframes fadeInSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-up { animation: fadeInSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
+    .delay-300 { animation-delay: 300ms; }
+    .delay-500 { animation-delay: 500ms; }
+    .delay-700 { animation-delay: 700ms; }
+    
+    /* Card Content Formatting */
+    .answer-content strong { color: #a5b4fc; font-weight: 600; }
+    .answer-content .mono { 
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
+      font-size: 0.9em; 
+      background: rgba(56, 189, 248, 0.1); 
+      padding: 0.1rem 0.3rem; 
+      border-radius: 0.25rem; 
+      color: #7dd3fc; 
+      border: 1px solid rgba(56, 189, 248, 0.2); 
+    }
+    .answer-content .mini-tt { border-collapse: collapse; margin-top: 0.75rem; width: 100%; font-size: 0.85em; font-family: ui-monospace, monospace; }
+    .answer-content .mini-tt th { padding: 0.4rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #c4b5fd; text-align: center; }
+    .answer-content .mini-tt td { padding: 0.4rem; border: 1px solid rgba(255, 255, 255, 0.05); text-align: center; }
+    .answer-content .t-t { color: #34d399; font-weight: 700; }
+    .answer-content .t-f { color: #fb7185; font-weight: 700; }
+
+    /* Custom Scrollbar */
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200 min-h-screen">
+
+  <!-- Ambient Background -->
+  <div class="fixed inset-0 z-0 pointer-events-none opacity-40 mix-blend-screen">
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-900/40 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-slate-900/60 rounded-full blur-[150px]"></div>
+    <div class="absolute top-[40%] left-[60%] w-[30%] h-[40%] bg-blue-900/30 rounded-full blur-[100px]"></div>
+  </div>
+
+  <div class="relative z-10 max-w-3xl mx-auto px-4 py-8 flex flex-col min-h-screen">
+    
+    <!-- Header -->
+    <header class="text-center mb-8 fade-in-up">
+      <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-100 via-indigo-200 to-sky-200 bg-clip-text text-transparent mb-2">
+        Mathematical Logic
+      </h1>
+      <p class="text-slate-500 text-sm md:text-base flex items-center justify-center gap-2">
+        Flashcards <span class="w-1 h-1 rounded-full bg-slate-700 block"></span> Tap to flip
+      </p>
+    </header>
+
+    <!-- Score Bar -->
+    <div class="flex flex-wrap justify-center gap-3 mb-6 fade-in-up delay-100">
+      <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-sm">
+        <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+        <span class="text-sm font-medium text-slate-300" id="stat-known">0 known</span>
+      </div>
+      <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-sm">
+        <div class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>
+        <span class="text-sm font-medium text-slate-300" id="stat-missed">0 missed</span>
+      </div>
+      <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 backdrop-blur-md shadow-sm">
+        <div class="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]"></div>
+        <span class="text-sm font-medium text-slate-300" id="stat-left">0 left</span>
+      </div>
+    </div>
+
+    <!-- Topics -->
+    <div class="w-full overflow-x-auto pb-4 mb-2 scrollbar-hide fade-in-up delay-200">
+      <div class="flex gap-2 w-max px-1" id="topics-container">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="w-full mb-8 fade-in-up delay-300">
+      <div class="flex justify-between text-xs text-slate-500 mb-2 px-1">
+        <span id="prog-text">Card 1 of 100</span>
+        <span id="prog-pct">0%</span>
+      </div>
+      <div class="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800/50">
+        <div id="prog-fill" class="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Flashcard -->
+    <div id="card-wrap" class="relative w-full aspect-[4/3] md:aspect-[16/9] max-h-[400px] cursor-pointer group [perspective:1200px] fade-in-up delay-500">
+      <div id="card-inner" class="flashcard-inner absolute inset-0 w-full h-full">
+        
+        <!-- Front Face -->
+        <div class="flashcard-face absolute inset-0 flex flex-col bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-6 md:p-10 shadow-2xl transition-all duration-300 group-hover:border-slate-600/60 group-hover:bg-slate-800/80">
+          <div class="flex justify-between items-center mb-6">
+            <span id="tag-front" class="text-[10px] uppercase tracking-widest font-semibold px-3 py-1 bg-slate-800 text-indigo-300 rounded-full border border-slate-700/50">
+              Topic
+            </span>
+            <svg class="w-4 h-4 text-slate-500 opacity-50 transition-transform group-hover:rotate-180 duration-700" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </div>
+          <div class="flex-grow flex items-center justify-center text-center">
+            <h2 id="card-q" class="text-xl md:text-2xl font-medium text-slate-100 leading-snug">
+              Question loading...
+            </h2>
+          </div>
+          <div class="text-center text-xs text-slate-500 mt-6 tracking-wide uppercase opacity-70">
+            Tap to reveal answer
+          </div>
+        </div>
+
+        <!-- Back Face -->
+        <div class="flashcard-face flashcard-back absolute inset-0 flex flex-col bg-slate-900/90 backdrop-blur-xl border border-indigo-500/30 rounded-3xl p-6 md:p-10 shadow-[0_0_40px_rgba(99,102,241,0.15)]">
+          <div class="flex justify-between items-center mb-6">
+             <span class="text-[10px] uppercase tracking-widest font-semibold px-3 py-1 bg-indigo-500/10 text-indigo-300 rounded-full border border-indigo-500/20">
+              Answer
+            </span>
+            <div id="card-indicators" class="flex gap-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+          <div class="flex-grow flex flex-col justify-center overflow-y-auto pr-2 custom-scrollbar">
+             <div id="card-a" class="answer-content text-slate-300 text-sm md:text-base leading-relaxed">
+                Answer content
+             </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-8 fade-in-up delay-700">
+      
+      <button id="btn-prev" class="order-3 md:order-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <span class="text-sm font-medium">Prev</span>
+      </button>
+
+      <button id="btn-known" class="order-1 md:order-2 flex items-center justify-center gap-2 py-3 md:col-span-1 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span class="text-sm font-medium">Knew it</span>
+      </button>
+
+      <button id="btn-shuffle" class="order-5 md:order-3 col-span-2 md:col-span-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/20 hover:border-sky-500/40 transition-all active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
+        <span class="text-sm font-medium">Shuffle</span>
+      </button>
+
+      <button id="btn-missed" class="order-2 md:order-4 flex items-center justify-center gap-2 py-3 md:col-span-1 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 transition-all active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        <span class="text-sm font-medium">Missed</span>
+      </button>
+
+      <button id="btn-next" class="order-4 md:order-5 flex items-center justify-center gap-2 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+        <span id="btn-next-text" class="text-sm font-medium">Next</span> 
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+
+    </div>
+    
+    <!-- Helper instructions -->
+    <div class="text-center text-slate-600 text-[11px] mt-6 flex justify-center gap-4 fade-in-up delay-[1000ms]">
+      <span><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">Space</kbd> Flip</span>
+      <span class="hidden sm:inline"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">←</kbd> <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">→</kbd> Nav</span>
+      <span class="hidden sm:inline"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">k</kbd> Known</span>
+      <span class="hidden sm:inline"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">m</kbd> Missed</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full border backdrop-blur-md shadow-2xl flex items-center gap-2 transition-all duration-300 ease-out pointer-events-none opacity-0 translate-y-4">
+    <span id="toast-msg" class="text-sm font-semibold"></span>
+  </div>
+
+  <!-- Result Screen Modal -->
+  <div id="result-screen" class="fixed inset-0 z-50 items-center justify-center p-4 bg-slate-950/90 backdrop-blur-lg transition-opacity duration-300 hidden opacity-0">
+    <div class="bg-slate-900 border border-slate-700/60 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl shadow-indigo-500/10 transform scale-95 transition-transform duration-300" id="result-modal">
+      <div class="w-16 h-16 mx-auto bg-indigo-500/20 rounded-full flex items-center justify-center mb-4 border border-indigo-500/30">
+        <svg class="w-8 h-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-100 mb-2">Deck Complete</h2>
+      
+      <p id="result-msg" class="text-slate-400 text-sm mb-8">
+        You scored <span id="result-pct" class="text-slate-200 font-bold">0%</span> on reviewed cards.
+      </p>
+
+      <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="flex flex-col items-center p-3 rounded-2xl bg-slate-800/50 border border-slate-700/50">
+          <span id="res-known" class="text-2xl font-bold text-emerald-400">0</span>
+          <span class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Known</span>
+        </div>
+        <div class="flex flex-col items-center p-3 rounded-2xl bg-slate-800/50 border border-slate-700/50">
+          <span id="res-missed" class="text-2xl font-bold text-rose-400">0</span>
+          <span class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Missed</span>
+        </div>
+         <div class="flex flex-col items-center p-3 rounded-2xl bg-slate-800/50 border border-slate-700/50">
+          <span id="res-skipped" class="text-2xl font-bold text-slate-300">0</span>
+          <span class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Skipped</span>
+        </div>
+      </div>
+
+      <button id="btn-restart" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors shadow-lg shadow-indigo-600/20 active:scale-[0.98]">
+        Restart Deck
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // --- DATA ---
+    const ALL = [
+      {t:"Propositions",q:"Give the formal definition of a proposition.",a:"A <strong>declarative sentence</strong> that is either TRUE or FALSE but not both. Also called a statement. Truth or falsity is its <strong>truth value</strong>."},
+      {t:"Propositions",q:"Why is 'x + 1 = 2' NOT a proposition?",a:"It's an <strong>open statement</strong> — the truth value depends on the unknown x. When x=1 it's T; when x=2 it's F. No fixed truth value → not a proposition."},
+      {t:"Propositions",q:"Why is '2 + 2 = 0' a proposition even though it's false?",a:"It's a declarative sentence with a definite truth value (<strong>FALSE</strong>). A proposition doesn't need to be true — it just needs a definite T or F."},
+      {t:"Propositions",q:"Classify: 'May God bless you.'",a:"<strong>NOT a proposition</strong> — it is a wish/exclamation. It has no definite truth value."},
+      {t:"Propositions",q:"Classify: '{1,3} ⊂ {4,5,6}'",a:"<strong>PROPOSITION</strong> — it is a declarative statement. Truth value: <strong>FALSE</strong> (1 and 3 are not in {4,5,6})."},
+      {t:"Propositions",q:"Classify: 'Ram is a name.'",a:"<strong>PROPOSITION — TRUE.</strong> It is a declarative sentence with a definite truth value."},
+      {t:"Propositions",q:"What are atomic vs compound propositions?",a:"<strong>Atomic:</strong> single proposition, no connectives. Denoted lowercase p, q, r.<br><strong>Compound:</strong> two or more atomic joined by connectives. Denoted uppercase P, Q."},
+      {t:"Propositions",q:"What symbols denote propositions?",a:"<strong>Atomic:</strong> p, q, r, s (lowercase).<br><strong>Compound:</strong> P, Q, R (uppercase).<br><strong>Truth values:</strong> T (true) or F (false)."},
+      {t:"Propositions",q:"Classify: 'What a movie!'",a:"<strong>NOT a proposition</strong> — it is an exclamation. No definite truth value."},
+      {t:"Propositions",q:"Classify: 'Complete the assignment by tomorrow.'",a:"<strong>NOT a proposition</strong> — it is a command/imperative sentence. Commands have no truth value."},
+      {t:"Propositions",q:"'Rahul Gandhi is our PM' — is this a proposition?",a:"<strong>YES</strong>, it's a proposition. Currently <strong>FALSE</strong> (as of 2025/2026)."},
+      {t:"Propositions",q:"What is a truth value?",a:"The truth or falsity of a statement. Every proposition is either <strong>T (true)</strong> or <strong>F (false)</strong> — never both, never neither."},
+      {t:"Propositions",q:"Give 3 examples that are NOT propositions and explain why.",a:"1. <strong>'Is it raining?'</strong> — question<br>2. <strong>'Open the door.'</strong> — command<br>3. <strong>'x > 5'</strong> — open statement (depends on x)"},
+      {t:"Propositions",q:"'5 ∈ {1, 6, 7}' — proposition? Truth value?",a:"<strong>YES</strong>, proposition. Truth value: <strong>FALSE</strong> — 5 is not an element of {1, 6, 7}."},
+      {t:"Propositions",q:"Why can't a proposition be both true and false?",a:"By the <strong>Law of Non-Contradiction</strong> — one of the fundamental laws of classical logic. A statement cannot simultaneously hold and not hold."},
+      {t:"Connectives",q:"What is the only row where p ∧ q is TRUE?",a:"When <strong>BOTH p = T AND q = T</strong>. All other combinations give F.<br><em>Memory: AND needs ALL to be true.</em>"},
+      {t:"Connectives",q:"What is the only row where p ∨ q is FALSE?",a:"When <strong>BOTH p = F AND q = F</strong>. Even one T makes it T.<br><em>Memory: OR fails only when ALL fail.</em>"},
+      {t:"Connectives",q:"What is the only row where p → q is FALSE?",a:"When <strong>p = T and q = F</strong> (promise made but broken).<br>All other rows give T — including F → anything = T (vacuous truth)."},
+      {t:"Connectives",q:"Explain 'vacuous truth' in conditionals.",a:"When the hypothesis p is <strong>FALSE</strong>, the conditional p→q is <strong>TRUE</strong> regardless of q.<br>Example: <em>'If pigs fly, I'll eat my hat'</em> — vacuously TRUE since pigs don't fly."},
+      {t:"Connectives",q:"When is p ↔ q true?",a:"When p and q have the <strong>SAME truth value</strong> (both T or both F). False when they differ.<br>Also: p↔q ≡ (p→q) ∧ (q→p)"},
+      {t:"Connectives",q:"Write p → q in terms of basic connectives.",a:"<span class='mono'>p → q ≡ ~p ∨ q</span><br>Also useful: <span class='mono'>~(p→q) ≡ p ∧ ~q</span>"},
+      {t:"Connectives",q:"XOR (p ⊕ q) — when is it true?",a:"True when p and q have <strong>DIFFERENT</strong> truth values. False when they are the <strong>SAME</strong>.<br>T⊕F = T, F⊕T = T, T⊕T = F, F⊕F = F"},
+      {t:"Connectives",q:"p: Lucknow is capital of UP (T). q: 2 is odd (F). Find p∧q, p∨q, ~p, p→q.",a:"p∧q = T∧F = <strong>F</strong><br>p∨q = T∨F = <strong>T</strong><br>~p = ~T = <strong>F</strong><br>p→q = T→F = <strong>F</strong> (promise broken!)"},
+      {t:"Connectives",q:"Truth value: 'If 3×5=24, then 3+5=8'",a:"p: 3×5=24 is <strong>FALSE</strong>. Antecedent is false → conditional is <strong>TRUE</strong> (vacuous truth)."},
+      {t:"Connectives",q:"Truth value: 'If 3×5=15, then 3+5=12'",a:"p: 3×5=15 is T. q: 3+5=12 is F.<br>T→F = <strong>FALSE</strong> ← the only case where conditional fails."},
+      {t:"Connectives",q:"Truth value: '6+2=7 AND 4+4=8'",a:"p: 6+2=7 is <strong>F</strong>. q: 4+4=8 is <strong>T</strong>.<br>F∧T = <strong>FALSE</strong> — conjunction fails if any part fails."},
+      {t:"Connectives",q:"Truth value: 'If tigers have wings, then RDX is dangerous'",a:"p: tigers have wings = <strong>FALSE</strong>.<br>F→anything = <strong>TRUE</strong> (vacuous truth)."},
+      {t:"Connectives",q:"In p→q, what is p and what is q called?",a:"p = <strong>antecedent</strong> (hypothesis/assumption)<br>q = <strong>consequent</strong> (conclusion)<br>Read: 'If p then q' / 'p implies q'"},
+      {t:"Connectives",q:"How many rows does a truth table need for n variables?",a:"<strong>2ⁿ rows</strong>.<br>2 variables → 4 rows<br>3 variables → 8 rows<br>4 variables → 16 rows"},
+      {t:"Connectives",q:"Operator precedence — highest to lowest",a:"1. <strong>~</strong> (negation) — highest<br>2. <strong>∧</strong> (and)<br>3. <strong>∨</strong> (or)<br>4. <strong>→</strong> (conditional)<br>5. <strong>↔</strong> (biconditional) — lowest<br>Use brackets to override!"},
+      {t:"Connectives",q:"Write symbolically: 'Neither Anil nor Kanchan is poor'",a:"Let p: Anil is poor, q: Kanchan is poor.<br>Neither A nor B = NOT A AND NOT B<br>= <strong>~p ∧ ~q</strong>"},
+      {t:"Connectives",q:"Write symbolically: 'Not true that Anil and Kanchan are both rich'",a:"Let r: Anil rich, s: Kanchan rich.<br><strong>~(r ∧ s)</strong><br>By De Morgan's ≡ ~r ∨ ~s"},
+      {t:"Connectives",q:"Evaluate: p∧q → p∨q for p=T, q=F",a:"p∧q = T∧F = <strong>F</strong><br>p∨q = T∨F = <strong>T</strong><br>F→T = <strong>TRUE</strong>"},
+      {t:"De Morgan's",q:"De Morgan's Law 1 — state and explain",a:"<span class='mono'>~(p ∨ q) ≡ ~p ∧ ~q</span><br>'Not (A or B)' = 'Not A AND Not B'<br>To negate an OR: <strong>flip to AND and negate both parts.</strong>"},
+      {t:"De Morgan's",q:"De Morgan's Law 2 — state and explain",a:"<span class='mono'>~(p ∧ q) ≡ ~p ∨ ~q</span><br>'Not (A and B)' = 'Not A OR Not B'<br>To negate an AND: <strong>flip to OR and negate both parts.</strong>"},
+      {t:"De Morgan's",q:"Apply De Morgan's: ~(p ∧ q ∧ r)",a:"~(p ∧ q ∧ r) ≡ <strong>~p ∨ ~q ∨ ~r</strong><br>Extended De Morgan's works for any number of terms."},
+      {t:"De Morgan's",q:"Apply De Morgan's: ~(p ∨ q ∨ r)",a:"~(p ∨ q ∨ r) ≡ <strong>~p ∧ ~q ∧ ~r</strong>"},
+      {t:"De Morgan's",q:"State the Idempotent Laws",a:"<span class='mono'>p ∨ p ≡ p</span><br><span class='mono'>p ∧ p ≡ p</span><br>'OR-ing or AND-ing with itself gives itself back.'"},
+      {t:"De Morgan's",q:"State the Identity Laws",a:"<span class='mono'>p ∨ F ≡ p</span> &nbsp;&nbsp; <span class='mono'>p ∧ T ≡ p</span><br><span class='mono'>p ∨ T ≡ T</span> &nbsp;&nbsp; <span class='mono'>p ∧ F ≡ F</span><br>F is identity for ∨; T is identity for ∧."},
+      {t:"De Morgan's",q:"State the Complement Laws",a:"<span class='mono'>p ∨ ~p ≡ T</span> (Law of excluded middle)<br><span class='mono'>p ∧ ~p ≡ F</span> (Law of contradiction)<br><span class='mono'>~T ≡ F</span> &nbsp;&nbsp; <span class='mono'>~F ≡ T</span>"},
+      {t:"De Morgan's",q:"State the Involution (Double Negation) Law",a:"<span class='mono'>~(~p) ≡ p</span><br>Negating twice returns to original.<br>Also written ¬¬p = p."},
+      {t:"De Morgan's",q:"State the Commutative Laws",a:"<span class='mono'>p ∨ q ≡ q ∨ p</span><br><span class='mono'>p ∧ q ≡ q ∧ p</span><br>Order doesn't matter for ∨ and ∧."},
+      {t:"De Morgan's",q:"State the Associative Laws",a:"<span class='mono'>(p∨q)∨r ≡ p∨(q∨r)</span><br><span class='mono'>(p∧q)∧r ≡ p∧(q∧r)</span><br>Grouping doesn't matter for ∨ and ∧."},
+      {t:"De Morgan's",q:"State the Distributive Laws",a:"<span class='mono'>p∨(q∧r) ≡ (p∨q)∧(p∨r)</span><br><span class='mono'>p∧(q∨r) ≡ (p∧q)∨(p∧r)</span><br>Like expanding brackets in algebra."},
+      {t:"De Morgan's",q:"Simplify: ~(~p ∧ ~q) using laws",a:"Apply De Morgan's:<br>~(~p ∧ ~q) ≡ ~~p ∨ ~~q<br>Apply double negation:<br>≡ <strong>p ∨ q</strong>"},
+      {t:"Equivalence",q:"What does P ≡ Q mean?",a:"P and Q are <strong>logically equivalent</strong> — they have <strong>identical truth values</strong> for every possible combination of their variables."},
+      {t:"Equivalence",q:"How do you prove logical equivalence?",a:"Build a truth table for both. If all rows of both final columns match exactly → <strong>equivalent</strong>.<br>Or use known laws to transform one into the other algebraically."},
+      {t:"Equivalence",q:"Are 'Cheap food is not healthy' and 'Healthy food is not cheap' equivalent?",a:"YES! Let p: cheap, q: healthy.<br>First: p→~q &nbsp;&nbsp; Second: q→~p<br>Second is the <strong>contrapositive</strong> of the first → always equivalent!"},
+      {t:"Equivalence",q:"Show: p→(q∨r) ≡ (p→q)∨(p→r)",a:"Use p→q ≡ ~p∨q:<br>LHS: ~p∨q∨r<br>RHS: (~p∨q)∨(~p∨r) ≡ ~p∨q∨r<br><strong>Both sides identical ✓</strong>"},
+      {t:"Equivalence",q:"Show: p→(q∧r) ≡ (p→q)∧(p→r)",a:"LHS: ~p∨(q∧r)<br>By distributive: (~p∨q)∧(~p∨r)<br>= (p→q)∧(p→r) <strong>✓</strong>"},
+      {t:"Equivalence",q:"What is the negation of p→q?",a:"<span class='mono'>~(p→q) ≡ p ∧ ~q</span><br>A conditional is false <strong>only</strong> when antecedent is true AND consequent is false."},
+      {t:"Equivalence",q:"What is the negation of p↔q?",a:"<span class='mono'>~(p↔q) ≡ (p∧~q) ∨ (~p∧q)</span><br>Equivalently: <span class='mono'>p⊕q</span> (XOR).<br>Biconditional fails when the two sides differ."},
+      {t:"Equivalence",q:"Prove: p→q ≡ ~q→~p (contrapositive law)",a:"<table class='mini-tt'><tr><th>p</th><th>q</th><th>p→q</th><th>~q→~p</th></tr><tr><td>T</td><td>T</td><td class='t-t'>T</td><td class='t-t'>T</td></tr><tr><td>T</td><td>F</td><td class='t-f'>F</td><td class='t-f'>F</td></tr><tr><td>F</td><td>T</td><td class='t-t'>T</td><td class='t-t'>T</td></tr><tr><td>F</td><td>F</td><td class='t-t'>T</td><td class='t-t'>T</td></tr></table>Columns identical → <strong>proved ✓</strong>"},
+      {t:"Tautology",q:"Formal definition of tautology",a:"A compound proposition P(p,q,r,...) whose truth value is <strong>T for ALL possible</strong> truth value assignments of its variables."},
+      {t:"Tautology",q:"Formal definition of fallacy (contradiction)",a:"A compound proposition whose truth value is <strong>F for ALL possible</strong> truth value assignments. Also called contradiction."},
+      {t:"Tautology",q:"Formal definition of contingency",a:"A compound proposition that is <strong>neither a tautology nor a fallacy</strong> — it is true for some assignments and false for others."},
+      {t:"Tautology",q:"Is ~p ∨ p a tautology?",a:"<table class='mini-tt'><tr><th>p</th><th>~p</th><th>~p∨p</th></tr><tr><td>T</td><td>F</td><td class='t-t'>T</td></tr><tr><td>F</td><td>T</td><td class='t-t'>T</td></tr></table>All T → <strong>Tautology ✓</strong>"},
+      {t:"Tautology",q:"Is ~p ∧ p a tautology, fallacy, or contingency?",a:"<table class='mini-tt'><tr><th>p</th><th>~p</th><th>~p∧p</th></tr><tr><td>T</td><td>F</td><td class='t-f'>F</td></tr><tr><td>F</td><td>T</td><td class='t-f'>F</td></tr></table>All F → <strong>Fallacy (Contradiction) ✓</strong>"},
+      {t:"Tautology",q:"Is p → ~p a tautology, fallacy, or contingency?",a:"<table class='mini-tt'><tr><th>p</th><th>~p</th><th>p→~p</th></tr><tr><td>T</td><td>F</td><td class='t-f'>F</td></tr><tr><td>F</td><td>T</td><td class='t-t'>T</td></tr></table>Not all T, not all F → <strong>Contingency</strong>"},
+      {t:"Tautology",q:"Classify: [(p→q) ∧ (q→r)] → (p→r)",a:"This is <strong>Hypothetical Syllogism</strong>. Truth table gives all T → <strong>Tautology ✓</strong><br>This is why the inference rule is always valid."},
+      {t:"Tautology",q:"Classify: [(p→q) ∧ ~q] → ~p",a:"This is <strong>Modus Tollens</strong>. All rows give T → <strong>Tautology ✓</strong>"},
+      {t:"Tautology",q:"Classify: (p→q) ∧ p → q",a:"This is <strong>Modus Ponens</strong>. All rows give T → <strong>Tautology ✓</strong>"},
+      {t:"Tautology",q:"Is p → (p ∨ q) a tautology?",a:"YES — whenever p→(p∨q): if p=T, then p∨q=T, so T→T=T. If p=F, then F→anything=T.<br><strong>Tautology ✓</strong>"},
+      {t:"Tautology",q:"Why does checking tautology prove an argument valid?",a:"An argument is valid iff (P₁∧P₂∧...∧Pₙ)→Q is a <strong>tautology</strong>. If the premises always force the conclusion to be true, the argument is valid."},
+      {t:"Converse/Contra",q:"For p→q: define all four related statements",a:"<strong>Original:</strong> p→q<br><strong>Converse:</strong> q→p<br><strong>Inverse:</strong> ~p→~q<br><strong>Contrapositive:</strong> ~q→~p"},
+      {t:"Converse/Contra",q:"Which pairs are logically equivalent?",a:"<strong>Conditional ≡ Contrapositive</strong> (p→q ≡ ~q→~p)<br><strong>Converse ≡ Inverse</strong> (q→p ≡ ~p→~q)<br>Conditional is NOT equivalent to its converse or inverse."},
+      {t:"Converse/Contra",q:"'If divisible by 4, then even' — write all four forms",a:"Original: div4→even<br>Converse: even→div4 (<strong>FALSE!</strong>)<br>Inverse: ¬div4→odd (<strong>FALSE!</strong>)<br>Contrapositive: odd→¬div4 (<strong>TRUE</strong> — equiv to original)"},
+      {t:"Converse/Contra",q:"'If x=2, then x²=4' — write all four with truth values",a:"Original: x=2→x²=4 <strong>(T)</strong><br>Contrapositive: x²≠4→x≠2 <strong>(T)</strong><br>Inverse: x≠2→x²≠4 <strong>(F)</strong> (x=−2 fails)<br>Converse: x²=4→x=2 <strong>(F)</strong> (x=−2 fails)"},
+      {t:"Converse/Contra",q:"Why is the contrapositive always equivalent to the conditional?",a:"p→q is false <strong>only</strong> when p=T, q=F.<br>~q→~p is false <strong>only</strong> when ~q=T(q=F) and ~p=F(p=T).<br>Exactly the same condition → same truth table."},
+      {t:"Converse/Contra",q:"'If switch is on, light is on' — write contrapositive",a:"Contrapositive: <strong>If light is NOT on, then switch is NOT on</strong><br>(~q→~p) — logically equivalent to the original."},
+      {t:"Converse/Contra",q:"'If student studies, they understand' — write inverse",a:"Inverse: <strong>If student does NOT study, they do NOT understand</strong><br>(~p→~q) — NOT equivalent to the original!"},
+      {t:"Converse/Contra",q:"'If x≥2, then x²≥4' — is the converse true?",a:"Converse: If x²≥4, then x≥2.<br><strong>FALSE</strong> — counterexample: x=−3 satisfies x²=9≥4 but x<2.<br>Converse is not always true even when original is!"},
+      {t:"Converse/Contra",q:"'If x≥2, then x>1' — write the contrapositive",a:"Contrapositive: <strong>If x≤1, then x<2</strong><br>(~q→~p). This is equivalent to the original."},
+      {t:"Converse/Contra",q:"'Cheap food not healthy. Healthy food not cheap.' Are these the same statement?",a:"P: p→~q (cheap implies not healthy)<br>Q: q→~p (healthy implies not cheap)<br>Q is the <strong>contrapositive</strong> of P → <strong>YES, logically the same!</strong>"},
+      {t:"Validity",q:"What is an argument in logic?",a:"A sequence of premises (P₁,P₂,...Pₙ) followed by a conclusion Q. Written with premises listed above a line, conclusion below with <strong>∴</strong> symbol."},
+      {t:"Validity",q:"Step-by-step: Critical Row Method",a:"<strong>Step 1:</strong> Build full truth table for all variables.<br><strong>Step 2:</strong> Find rows where ALL premises are TRUE (critical rows).<br><strong>Step 3:</strong> Check if conclusion is TRUE in every critical row.<br>Yes → VALID. Any F → INVALID."},
+      {t:"Validity",q:"Modus Ponens — form and example",a:"Form: p→q, p ∴ q<br><br><em>If I study, I pass. I study. ∴ I pass.</em> — <strong>VALID</strong>"},
+      {t:"Validity",q:"Modus Tollens — form and example",a:"Form: p→q, ~q ∴ ~p<br><br><em>If I study, I pass. I did NOT pass. ∴ I did NOT study.</em> — <strong>VALID</strong>"},
+      {t:"Validity",q:"Hypothetical Syllogism — form and example",a:"Form: p→q, q→r ∴ p→r<br><br><em>If rains→cat hides. Cat hides→I go to movie. ∴ If rains→I go to movie.</em>"},
+      {t:"Validity",q:"Disjunctive Syllogism — both forms",a:"Form 1: p∨q, ~p ∴ q<br>Form 2: p∨q, p ∴ ~q<br><br><em>I'll pass OR go to Canada. I won't pass. ∴ I'll go to Canada.</em>"},
+      {t:"Validity",q:"Check: 'If rains→no party. No party→party tomorrow. ∴ If rains→party tomorrow.'",a:"p→~q, ~q→r ∴ p→r<br>By <strong>Hypothetical Syllogism</strong>: <strong>VALID ✓</strong>"},
+      {t:"Validity",q:"Check: 'If today Sunday→yesterday Saturday. Yesterday Saturday. ∴ Today Sunday.'",a:"P₁: p→q, P₂: q, Conclusion: p<br><strong>Fallacy of Affirming the Consequent</strong> → <strong>INVALID ✗</strong><br>Critical row exists where F,T makes both premises T but conclusion F."},
+      {t:"Validity",q:"Check: 'Labour market perfect → wages equal. Wages NOT equal. ∴ Market NOT perfect.'",a:"P₁: p→q, P₂: ~q, Conclusion: ~p<br>This is <strong>Modus Tollens</strong> → <strong>VALID ✓</strong>"},
+      {t:"Validity",q:"What is the Fallacy of Affirming the Consequent?",a:"Incorrectly concluding p from p→q and q.<br>Form: p→q, q ∴ p (<strong>INVALID</strong>)<br><em>All dogs are animals. This is an animal. ∴ This is a dog. WRONG!</em>"},
+      {t:"Validity",q:"What is the Fallacy of Denying the Antecedent?",a:"Incorrectly concluding ~q from p→q and ~p.<br>Form: p→q, ~p ∴ ~q (<strong>INVALID</strong>)<br>If p is false, q could still be true for other reasons."},
+      {t:"Validity",q:"Tutorial Q8b: 'Study→pass. ¬cinema→study. Failed. ∴ Went cinema.'",a:"p:study, q:pass, r:cinema<br>P₁:p→q, P₂:~r→p, P₃:~q ∴ r<br>From P₁+P₃ (Modus Tollens): ~p<br>Contrapositive of P₂: ~p→r<br>From ~p (Modus Ponens): r ✓ <strong>VALID</strong>"},
+      {t:"Validity",q:"Tutorial Q8a: 'MCA or MBA→job. Job→happy. Not happy. ∴ Not completed MBA.'",a:"(p∨q)→r, r→s, ~s ∴ ~q<br>From r→s, ~s: Modus Tollens → ~r<br>From (p∨q)→r, ~r: Modus Tollens → ~(p∨q) ≡ ~p∧~q<br>∴ ~q ✓ <strong>VALID</strong>"},
+      {t:"Validity",q:"What if there are NO critical rows in the truth table?",a:"If no row has all premises simultaneously true, the argument is <strong>vacuously valid</strong> — the premises are contradictory and can never all be true at once."},
+      {t:"Validity",q:"'If I study hard→pass. If I play PUB-G→fail. I play PUB-G. ∴ I don't study hard.'",a:"P₁:p→q, P₂:r→~q, P₃:r ∴ ~p<br>From P₂+P₃ (Modus Ponens): ~q<br>From P₁+~q (Modus Tollens): ~p ✓ <strong>VALID</strong>"},
+      {t:"Quantifiers",q:"What is a propositional function (predicate)?",a:"An <strong>open sentence</strong> p(x) whose truth value depends on the variable x.<br>Example: p(x): 'x > 3' — not a proposition until x is given a value or quantified."},
+      {t:"Quantifiers",q:"What is the truth set Tₚ?",a:"The subset of domain A for which p(x) is TRUE.<br>Example: p(x): x²≤25, domain ℕ → <strong>Tₚ = {1,2,3,4,5}</strong>"},
+      {t:"Quantifiers",q:"Universal quantifier ∀ — meaning and how to disprove",a:"∀ reads as 'for all' or 'for every'.<br>∀x∈A, p(x) = 'p(x) is true for every x in A'.<br>To <strong>DISPROVE</strong>: find just ONE counterexample."},
+      {t:"Quantifiers",q:"Existential quantifier ∃ — meaning and how to prove",a:"∃ reads as 'there exists' or 'for some'.<br>∃x∈A, p(x) = 'p(x) is true for at least one x in A'.<br>To <strong>PROVE</strong>: find just ONE example."},
+      {t:"Quantifiers",q:"How do you negate ∀x∈A, p(x)?",a:"~[∀x∈A, p(x)] ≡ <strong>∃x∈A, ~p(x)</strong><br>'Not all have property' = 'Some don't have property'"},
+      {t:"Quantifiers",q:"How do you negate ∃x∈A, p(x)?",a:"~[∃x∈A, p(x)] ≡ <strong>∀x∈A, ~p(x)</strong><br>'None exists' = 'For all x, it fails'"},
+      {t:"Quantifiers",q:"Negate: 'Every even integer > 4 is sum of two primes'",a:"∃ even n>4 such that n is <strong>NOT</strong> the sum of two primes.<br><em>(This is the famous Goldbach's conjecture!)</em>"},
+      {t:"Quantifiers",q:"Negate: 'All students pass'",a:"Original: ∀x∈S, p(x)<br>Negation: ∃x∈S, ~p(x)<br>= <strong>'Some students do NOT pass'</strong>"},
+      {t:"Quantifiers",q:"Negate: 'Some birds do not fly'",a:"Original: ∃x∈B, p(x) (p(x): x doesn't fly)<br>Negation: ∀x∈B, ~p(x)<br>= <strong>'All birds fly'</strong>"},
+      {t:"Quantifiers",q:"p(x): x>3. Find truth values of p(4) and p(3).",a:"p(4): 4>3 = <strong>TRUE</strong><br>p(3): 3>3 = <strong>FALSE</strong> (3 is not strictly greater than 3)"},
+      {t:"Quantifiers",q:"Q(x,y): x=y+3. Find Q(1,2) and Q(3,0).",a:"Q(1,2): 1 = 2+3 = 5? NO → <strong>FALSE</strong><br>Q(3,0): 3 = 0+3 = 3? YES → <strong>TRUE</strong>"},
+      {t:"Quantifiers",q:"What is the difference between ∀x∃y p(x,y) and ∃y∀x p(x,y)?",a:"∀x∃y: for each x, we find a (possibly different) y — <strong>weaker</strong><br>∃y∀x: ONE single y works for ALL x — <strong>much stronger!</strong><br>Order of quantifiers matters."},
+      {t:"Normal Forms",q:"What is a minterm?",a:"A product term (conjunction) where each variable appears <strong>exactly once</strong> — either normal or complemented.<br>For p=T, q=T, r=F: minterm = <strong>p∧q∧~r</strong>"},
+      {t:"Normal Forms",q:"What is a maxterm?",a:"A sum term (disjunction) where each variable appears <strong>exactly once</strong> — either normal or complemented.<br>For p=T, q=T, r=F: maxterm = <strong>~p∨~q∨r</strong>"},
+      {t:"Normal Forms",q:"How many minterms/maxterms exist for n variables?",a:"Exactly <strong>2ⁿ</strong> of each.<br>2 variables → 4 each<br>3 variables → 8 each<br>4 variables → 16 each"},
+      {t:"Normal Forms",q:"What is PDNF?",a:"<strong>Principal Disjunctive Normal Form</strong> = 'Sum of Products'<br>Expresses a function as an OR of its minterms (rows where function = TRUE)."},
+      {t:"Normal Forms",q:"What is PCNF?",a:"<strong>Principal Conjunctive Normal Form</strong> = 'Product of Sums'<br>Expresses a function as an AND of its maxterms (rows where function = FALSE)."},
+      {t:"Normal Forms",q:"How do you read a minterm from a truth table row?",a:"For each variable: if its value is <strong>T → write as-is</strong>. If <strong>F → write its negation ~</strong>.<br>Example: p=T, q=F, r=T → minterm = p∧~q∧r"},
+      {t:"Normal Forms",q:"What is the relationship between PDNF and PCNF?",a:"They represent the <strong>same function</strong> from opposite angles.<br>PDNF covers all TRUE rows (minterms).<br>PCNF covers all FALSE rows (maxterms).<br>Together they partition the entire truth table."},
+      {t:"Normal Forms",q:"Find PDNF and PCNF of (p→q)∧q",a:"Rows: TT=T, TF=F, FT=T, FF=T<br>PDNF (T rows): <strong>(p∧q) ∨ (~p∧q) ∨ (~p∧~q)</strong><br>PCNF (F row): <strong>~p∨q</strong>"},
+      {t:"Key Facts",q:"Summary: when is each connective FALSE?",a:"<strong>p∧q:</strong> FALSE unless both T<br><strong>p∨q:</strong> FALSE only when both F<br><strong>p→q:</strong> FALSE only when p=T, q=F<br><strong>p↔q:</strong> FALSE when p and q differ<br><strong>p⊕q:</strong> FALSE when p and q are the same"},
+      {t:"Key Facts",q:"Name all 4 rules of inference",a:"1. <strong>Modus Ponens:</strong> p→q, p ∴ q<br>2. <strong>Modus Tollens:</strong> p→q, ~q ∴ ~p<br>3. <strong>Hypothetical Syllogism:</strong> p→q, q→r ∴ p→r<br>4. <strong>Disjunctive Syllogism:</strong> p∨q, ~p ∴ q"},
+      {t:"Key Facts",q:"Key difference: Modus Ponens vs Modus Tollens",a:"<strong>Modus Ponens:</strong> works FORWARD — given p, conclude q.<br><strong>Modus Tollens:</strong> works BACKWARD — given ~q, conclude ~p.<br>Both valid; their fallacy versions (affirming consequent, denying antecedent) are INVALID."},
+      {t:"Key Facts",q:"How is De Morgan's used to negate conditionals?",a:"Step 1: p→q ≡ ~p∨q<br>Step 2: ~(~p∨q) by De Morgan's = ~~p ∧ ~q<br>Step 3: = <strong>p ∧ ~q</strong><br>So ~(p→q) ≡ p ∧ ~q"},
+      {t:"Key Facts",q:"Prove algebraically: ~p → (p → q) is a tautology",a:"~p→(p→q)<br>≡ ~p→(~p∨q)<br>≡ p∨(~p∨q)<br>≡ (p∨~p)∨q<br>≡ <strong>T∨q ≡ T</strong> ✓"},
+      {t:"Key Facts",q:"What is vacuous truth and when does it apply?",a:"When hypothesis p of p→q is FALSE, the entire conditional is <strong>TRUE</strong> regardless of q.<br>Used in universal statements: ∀x P(x)→Q(x) is vacuously true for any x not satisfying P(x)."},
+      {t:"Key Facts",q:"Complete laws summary — quick recall",a:"Idempotent: p∨p≡p, p∧p≡p<br>Identity: p∨F≡p, p∧T≡p<br>Complement: p∨~p≡T, p∧~p≡F<br>Double neg: ~~p≡p<br>De Morgan: ~(p∨q)≡~p∧~q<br>Conditional: p→q≡~p∨q"},
+      {t:"Key Facts",q:"What is p↔q equivalent to?",a:"p↔q ≡ (p→q) ∧ (q→p)<br>Also: ~(p↔q) ≡ p⊕q (XOR)<br>Biconditional is true when both implications hold simultaneously."},
+      {t:"Key Facts",q:"'If the determinant is zero, the system has no solution or infinite solutions.' Write the negation.",a:"Let p: det=0, q: no solution, r: infinite solutions.<br>Original: p→(q∨r)<br>Negation: ~(p→(q∨r)) ≡ <strong>p ∧ ~q ∧ ~r</strong><br>= 'Det is zero AND system has a unique solution.'"}
+    ];
+
+    const TOPICS = ["All", ...new Set(ALL.map(c => c.t))];
+
+    // --- STATE ---
+    let deck = [...ALL];
+    let currentTopic = "All";
+    let idx = 0;
+    let flipped = false;
+    let scored = {}; 
+    let toastTimeout;
+
+    // --- DOM ELEMENTS ---
+    const elTopicsContainer = document.getElementById('topics-container');
+    const elCardInner = document.getElementById('card-inner');
+    const elCardWrap = document.getElementById('card-wrap');
+    const elCardQ = document.getElementById('card-q');
+    const elCardA = document.getElementById('card-a');
+    const elTagFront = document.getElementById('tag-front');
+    const elCardIndicators = document.getElementById('card-indicators');
+    
+    const elProgText = document.getElementById('prog-text');
+    const elProgPct = document.getElementById('prog-pct');
+    const elProgFill = document.getElementById('prog-fill');
+    
+    const elStatKnown = document.getElementById('stat-known');
+    const elStatMissed = document.getElementById('stat-missed');
+    const elStatLeft = document.getElementById('stat-left');
+    
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const btnNextText = document.getElementById('btn-next-text');
+    
+    const elToast = document.getElementById('toast');
+    const elToastMsg = document.getElementById('toast-msg');
+    
+    const elResultScreen = document.getElementById('result-screen');
+    const elResultModal = document.getElementById('result-modal');
+
+    // --- LOGIC ---
+    function getFilteredDeck() {
+      return currentTopic === "All" ? deck : deck.filter(c => c.t === currentTopic);
+    }
+
+    function calculateStats() {
+      const fd = getFilteredDeck();
+      let known = 0, missed = 0;
+      fd.forEach(c => {
+        if (scored[c.q] === 'known') known++;
+        if (scored[c.q] === 'missed') missed++;
+      });
+      return { known, missed, left: fd.length - (known + missed), total: fd.length };
+    }
+
+    function initTopics() {
+      elTopicsContainer.innerHTML = '';
+      TOPICS.forEach(t => {
+        const count = t === 'All' ? deck.length : deck.filter(c => c.t === t).length;
+        const btn = document.createElement('button');
+        btn.onclick = () => { currentTopic = t; idx = 0; flipped = false; render(); };
+        btn.className = `px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border ${
+          currentTopic === t 
+            ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200 shadow-[0_0_15px_rgba(99,102,241,0.2)]' 
+            : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800 hover:border-slate-700'
+        }`;
+        btn.innerHTML = `${t} <span class="opacity-50 ml-1">(${count})</span>`;
+        elTopicsContainer.appendChild(btn);
+      });
+    }
+
+    function showToast(msg, type = 'success') {
+      clearTimeout(toastTimeout);
+      elToastMsg.textContent = msg;
+      elToast.className = `fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full border backdrop-blur-md shadow-2xl flex items-center gap-2 transition-all duration-300 ease-out pointer-events-none opacity-100 translate-y-0 ${
+        type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+      }`;
+      toastTimeout = setTimeout(() => {
+        elToast.classList.remove('opacity-100', 'translate-y-0');
+        elToast.classList.add('opacity-0', 'translate-y-4');
+      }, 2000);
+    }
+
+    function triggerShake() {
+      elCardWrap.classList.remove('animate-shake');
+      void elCardWrap.offsetWidth; // trigger reflow
+      elCardWrap.classList.add('animate-shake');
+    }
+
+    function render() {
+      initTopics();
+      const fd = getFilteredDeck();
+      const stats = calculateStats();
+      
+      // Update Stats
+      elStatKnown.textContent = `${stats.known} known`;
+      elStatMissed.textContent = `${stats.missed} missed`;
+      elStatLeft.textContent = `${stats.left} left`;
+
+      if (fd.length === 0) return;
+      const card = fd[idx];
+
+      // Update Card
+      elCardQ.textContent = card.q;
+      elCardA.innerHTML = card.a;
+      elTagFront.textContent = card.t;
+
+      // Update Flip State
+      if (flipped) elCardInner.classList.add('is-flipped');
+      else elCardInner.classList.remove('is-flipped');
+
+      // Indicators
+      elCardIndicators.innerHTML = '';
+      if (scored[card.q] === 'known') elCardIndicators.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>`;
+      if (scored[card.q] === 'missed') elCardIndicators.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>`;
+
+      // Update Progress
+      const pct = Math.round(((idx + 1) / stats.total) * 100);
+      elProgText.textContent = `Card ${idx + 1} of ${stats.total}`;
+      elProgPct.textContent = `${pct}%`;
+      elProgFill.style.width = `${pct}%`;
+
+      // Button states
+      btnPrev.disabled = idx === 0;
+      btnNextText.textContent = idx === stats.total - 1 ? 'Finish' : 'Next';
+      btnNext.disabled = idx === stats.total - 1 && !flipped;
+    }
+
+    function advance() {
+      const fd = getFilteredDeck();
+      if (idx < fd.length - 1) {
+        idx++;
+        flipped = false;
+        render();
+      } else {
+        showResultScreen();
+      }
+    }
+
+    function handleMark(type) {
+      if (!flipped) {
+        triggerShake();
+        showToast('Flip first to review!', 'error');
+        return;
+      }
+      
+      const card = getFilteredDeck()[idx];
+      scored[card.q] = type;
+      
+      if (type === 'known') showToast('✓ Marked as known', 'success');
+      else showToast('✗ Added to review pile', 'error');
+      
+      render(); // to update stats immediately
+      setTimeout(advance, 300);
+    }
+
+    function handleShuffle() {
+      deck = [...deck].sort(() => Math.random() - 0.5);
+      idx = 0;
+      flipped = false;
+      render();
+      showToast('🔀 Shuffled deck!', 'success');
+    }
+
+    function showResultScreen() {
+      const stats = calculateStats();
+      const scoredCount = stats.known + stats.missed;
+      const pct = scoredCount > 0 ? Math.round((stats.known / scoredCount) * 100) : 0;
+      
+      document.getElementById('res-known').textContent = stats.known;
+      document.getElementById('res-missed').textContent = stats.missed;
+      document.getElementById('res-skipped').textContent = stats.left;
+      
+      const msgEl = document.getElementById('result-msg');
+      if (scoredCount > 0) {
+        msgEl.innerHTML = `You scored <span class="text-slate-200 font-bold">${pct}%</span> on reviewed cards.`;
+      } else {
+        msgEl.textContent = "You went through the cards without marking them.";
+      }
+
+      elResultScreen.classList.remove('hidden');
+      setTimeout(() => {
+        elResultScreen.classList.remove('opacity-0');
+        elResultModal.classList.remove('scale-95');
+      }, 10);
+    }
+
+    function hideResultScreen() {
+      elResultScreen.classList.add('opacity-0');
+      elResultModal.classList.add('scale-95');
+      setTimeout(() => elResultScreen.classList.add('hidden'), 300);
+    }
+
+    function handleRestart() {
+      idx = 0;
+      flipped = false;
+      scored = {};
+      deck = [...ALL];
+      hideResultScreen();
+      render();
+    }
+
+    // --- EVENT LISTENERS ---
+    elCardWrap.addEventListener('click', () => {
+      flipped = !flipped;
+      render();
+    });
+
+    btnPrev.addEventListener('click', () => { if (idx > 0) { idx--; flipped = false; render(); } });
+    btnNext.addEventListener('click', () => { advance(); });
+    document.getElementById('btn-known').addEventListener('click', () => handleMark('known'));
+    document.getElementById('btn-missed').addEventListener('click', () => handleMark('missed'));
+    document.getElementById('btn-shuffle').addEventListener('click', handleShuffle);
+    document.getElementById('btn-restart').addEventListener('click', handleRestart);
+
+    window.addEventListener('keydown', (e) => {
+      if (!elResultScreen.classList.contains('hidden')) return;
+      const fd = getFilteredDeck();
+      
+      switch(e.key) {
+        case 'ArrowRight':
+        case 'n':
+          if (idx < fd.length - 1) { idx++; flipped = false; render(); }
+          break;
+        case 'ArrowLeft':
+        case 'p':
+          if (idx > 0) { idx--; flipped = false; render(); }
+          break;
+        case ' ':
+        case 'f':
+          e.preventDefault();
+          flipped = !flipped;
+          render();
+          break;
+        case 'k':
+          handleMark('known');
+          break;
+        case 'm':
+          handleMark('missed');
+          break;
+      }
+    });
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
