@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Argument Validity Flashcards</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { 
+    font-family: 'Segoe UI', system-ui, sans-serif; 
+    background: #030305; /* Deep dark background */
+    color: #fff;
+    min-height: 100vh; 
+    overflow-x: hidden;
+  }
+  
+  .scene { min-height: 100vh; position: relative; padding: 32px 20px 60px; z-index: 1; }
+  
+  /* Intense Neon Orbs */
+  .orb { position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none; animation: drift 12s ease-in-out infinite alternate; z-index: 0; mix-blend-mode: screen; }
+  .orb1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(0, 243, 255, 0.18), transparent 70%); top: -100px; left: -150px; animation-duration: 14s; }
+  .orb2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(255, 0, 234, 0.15), transparent 70%); top: 200px; right: -100px; animation-duration: 11s; animation-delay: -4s; }
+  .orb3 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(188, 19, 254, 0.15), transparent 70%); bottom: 100px; left: 20%; animation-duration: 16s; animation-delay: -7s; }
+  @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(40px, 30px) scale(1.1); } }
+
+  .glass-header { text-align: center; margin-bottom: 36px; position: relative; z-index: 2; }
+  .logo-pill { 
+    display: inline-flex; align-items: center; gap: 8px; 
+    background: rgba(0, 243, 255, 0.05); border: 1px solid rgba(0, 243, 255, 0.3); 
+    border-radius: 50px; padding: 6px 18px; margin-bottom: 20px; 
+    backdrop-filter: blur(20px); box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+  }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: #00f3ff; box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff; }
+  .logo-text { font-size: 12px; color: #00f3ff; letter-spacing: 0.15em; font-weight: 600; text-transform: uppercase; }
+  
+  h1.main-title { 
+    font-size: clamp(26px, 5vw, 46px); font-weight: 800; color: #fff; 
+    letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 8px; 
+    text-shadow: 0 0 20px rgba(0, 243, 255, 0.5), 0 0 40px rgba(255, 0, 234, 0.3); 
+  }
+  .subtitle { font-size: 14px; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* HUD Score Bar */
+  .score-bar { display: flex; gap: 16px; justify-content: center; margin-bottom: 32px; position: relative; z-index: 2; flex-wrap: wrap; }
+  .score-chip { 
+    background: rgba(10, 10, 15, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); 
+    border-radius: 12px; padding: 12px 24px; backdrop-filter: blur(20px); 
+    text-align: center; min-width: 100px; transition: all 0.3s;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  }
+  .score-chip .val { font-size: 24px; font-weight: 800; display: block; line-height: 1; }
+  .score-chip .lbl { font-size: 10px; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.1em; margin-top: 5px; display: block; }
+  
+  .score-chip.progress { border-bottom: 2px solid #bc13fe; }
+  .score-chip.progress .val { color: #e59cff; text-shadow: 0 0 15px rgba(188, 19, 254, 0.6); }
+  .score-chip.correct { border-bottom: 2px solid #39ff14; }
+  .score-chip.correct .val { color: #39ff14; text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); }
+  .score-chip.wrong { border-bottom: 2px solid #ff00ea; }
+  .score-chip.wrong .val { color: #ff00ea; text-shadow: 0 0 15px rgba(255, 0, 234, 0.6); }
+  .score-chip:not(.progress):not(.correct):not(.wrong) { border-bottom: 2px solid #00f3ff; }
+  .score-chip:not(.progress):not(.correct):not(.wrong) .val { color: #00f3ff; text-shadow: 0 0 15px rgba(0, 243, 255, 0.6); }
+
+  /* Neon Progress Track */
+  .progress-track { width: 100%; max-width: 600px; margin: 0 auto 32px; height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; overflow: hidden; position: relative; z-index: 2; box-shadow: inset 0 0 5px rgba(0,0,0,1); }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #bc13fe, #00f3ff, #39ff14); border-radius: 6px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 15px rgba(0, 243, 255, 0.8); }
+
+  /* Flashcard Area & Holographic Reveal */
+  .flashcard-area { display: flex; justify-content: center; align-items: center; perspective: 1500px; margin-bottom: 32px; position: relative; z-index: 2; min-height: 400px; }
+  .card-wrap { width: 100%; max-width: 640px; position: relative; cursor: pointer; }
+  
+  .card-face { 
+    width: 100%; border-radius: 20px; overflow: hidden; 
+    transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1); /* Sleek easing */
+  }
+  
+  .card-front { 
+    position: relative; z-index: 2; transform-origin: center; 
+    opacity: 1; transform: translateY(0) scale(1); filter: blur(0);
+  }
+  
+  .card-back { 
+    position: absolute; top: 0; left: 0; z-index: 1; 
+    opacity: 0; transform: translateY(40px) scale(0.8) rotateX(-5deg); 
+    filter: blur(15px); pointer-events: none; height: 100%;
+  }
+
+  /* The New Reveal Animation */
+  .card-wrap.flipped .card-front { 
+    opacity: 0; transform: translateY(-40px) scale(1.1) rotateX(5deg); 
+    filter: blur(15px); pointer-events: none; z-index: 1; 
+  }
+  .card-wrap.flipped .card-back { 
+    opacity: 1; transform: translateY(0) scale(1) rotateX(0deg); 
+    filter: blur(0); pointer-events: auto; z-index: 2; 
+  }
+
+  /* Glassmorphism Styling */
+  .glass-card { 
+    background: rgba(15, 15, 20, 0.75); 
+    border: 1px solid rgba(0, 243, 255, 0.15); 
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0, 243, 255, 0.05); 
+  }
+  .card-front:hover { 
+    border-color: rgba(0, 243, 255, 0.5); 
+    box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(0, 243, 255, 0.2), inset 0 0 20px rgba(0, 243, 255, 0.1); 
+  }
+  .card-wrap.flipped .card-back {
+    border-color: rgba(188, 19, 254, 0.4);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(188, 19, 254, 0.2), inset 0 0 20px rgba(188, 19, 254, 0.1); 
+  }
+
+  .shimmer { position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); animation: shimmer 4s ease-in-out infinite; pointer-events: none; }
+  @keyframes shimmer { 0% { left: -100%; } 100% { left: 200%; } }
+
+  .card-inner { padding: 36px 40px; position: relative; z-index: 1; min-height: 380px; display: flex; flex-direction: column; }
+  
+  .card-tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 20px; padding: 6px 14px; margin-bottom: 24px; width: fit-content; }
+  .card-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #00f3ff; box-shadow: 0 0 10px #00f3ff; }
+  .card-tag-text { font-size: 11px; color: #00f3ff; letter-spacing: 0.1em; font-weight: 600; }
+  
+  .q-num { font-size: 12px; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.15em; margin-bottom: 12px; text-transform: uppercase; }
+  .q-text { font-size: 16px; color: rgba(255, 255, 255, 0.95); line-height: 1.7; flex: 1; }
+  
+  .premise { background: rgba(0, 0, 0, 0.5); border-left: 2px solid rgba(0, 243, 255, 0.6); border-radius: 0 8px 8px 0; padding: 10px 16px; margin: 8px 0; font-size: 15px; color: rgba(255, 255, 255, 0.8); font-family: 'Courier New', monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+  .conclusion { background: rgba(188, 19, 254, 0.1); border-left: 2px solid #bc13fe; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 16px; font-size: 15px; color: #e59cff; font-family: 'Courier New', monospace; font-weight: bold; text-shadow: 0 0 8px rgba(188, 19, 254, 0.4); }
+  
+  .flip-hint { font-size: 11px; color: rgba(255, 255, 255, 0.3); text-align: center; margin-top: 20px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .answer-tag { display: inline-flex; align-items: center; gap: 8px; border-radius: 20px; padding: 8px 18px; margin-bottom: 20px; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; width: fit-content; text-transform: uppercase; }
+  .valid-tag { background: rgba(57, 255, 20, 0.1); border: 1px solid rgba(57, 255, 20, 0.4); color: #39ff14; box-shadow: 0 0 15px rgba(57, 255, 20, 0.2); }
+  .invalid-tag { background: rgba(255, 0, 234, 0.1); border: 1px solid rgba(255, 0, 234, 0.4); color: #ff00ea; box-shadow: 0 0 15px rgba(255, 0, 234, 0.2); }
+  
+  .a-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 14px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+  .a-rule { font-size: 14px; color: #00f3ff; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .a-rule::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: rgba(0, 243, 255, 0.2); border: 1px solid #00f3ff; flex-shrink: 0; box-shadow: 0 0 8px #00f3ff; }
+  .a-exp { font-size: 15px; color: rgba(255, 255, 255, 0.7); line-height: 1.7; margin-top: 12px; }
+
+  /* Hollow Neon Buttons */
+  .btn-row { display: flex; gap: 16px; justify-content: center; margin-bottom: 24px; position: relative; z-index: 2; flex-wrap: wrap; }
+  .btn { border-radius: 50px; padding: 14px 32px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); letter-spacing: 0.05em; background: transparent; text-transform: uppercase; }
+  
+  .btn-correct { border: 2px solid #39ff14; color: #39ff14; box-shadow: 0 0 15px rgba(57, 255, 20, 0.2), inset 0 0 10px rgba(57, 255, 20, 0.1); }
+  .btn-correct:hover { background: #39ff14; color: #000; box-shadow: 0 0 30px rgba(57, 255, 20, 0.6); transform: translateY(-3px); }
+  
+  .btn-wrong { border: 2px solid #ff00ea; color: #ff00ea; box-shadow: 0 0 15px rgba(255, 0, 234, 0.2), inset 0 0 10px rgba(255, 0, 234, 0.1); }
+  .btn-wrong:hover { background: #ff00ea; color: #000; box-shadow: 0 0 30px rgba(255, 0, 234, 0.6); transform: translateY(-3px); }
+  
+  .btn-next { border: 2px solid #00f3ff; color: #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1); }
+  .btn-next:hover { background: #00f3ff; color: #000; box-shadow: 0 0 30px rgba(0, 243, 255, 0.6); transform: translateY(-3px); }
+  
+  .btn:active { transform: scale(0.95); }
+
+  .nav-row { display: flex; gap: 12px; justify-content: center; position: relative; z-index: 2; }
+  .nav-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50px; padding: 8px 20px; font-size: 12px; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.1em; }
+  .nav-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.3); }
+
+  .toast { position: absolute; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px); background: rgba(10, 10, 15, 0.9); border: 1px solid; border-radius: 50px; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fff; backdrop-filter: blur(20px); transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10; white-space: nowrap; pointer-events: none; text-transform: uppercase; letter-spacing: 0.05em; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.correct-toast { border-color: #39ff14; color: #39ff14; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
+  .toast.wrong-toast { border-color: #ff00ea; color: #ff00ea; box-shadow: 0 0 20px rgba(255, 0, 234, 0.3); }
+
+  /* Results Panel */
+  .results-panel { text-align: center; padding: 40px 20px; position: relative; z-index: 2; display: none; }
+  .results-circle { width: 160px; height: 160px; border-radius: 50%; margin: 0 auto 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+  .results-circle::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #00f3ff; box-shadow: 0 0 40px rgba(0, 243, 255, 0.4), inset 0 0 30px rgba(0, 243, 255, 0.2); }
+  .results-pct { font-size: 42px; font-weight: 800; color: #fff; line-height: 1; text-shadow: 0 0 15px rgba(0, 243, 255, 0.8); }
+  .results-label { font-size: 12px; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.15em; margin-top: 6px; }
+  .results-title { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 10px; text-shadow: 0 0 20px rgba(255,255,255,0.4); }
+  .results-sub { font-size: 15px; color: rgba(255, 255, 255, 0.5); margin-bottom: 32px; letter-spacing: 0.05em; }
+  
+  .results-grid { display: flex; gap: 16px; justify-content: center; margin-bottom: 36px; flex-wrap: wrap; }
+  .r-stat { background: rgba(15, 15, 20, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 18px 28px; text-align: center; backdrop-filter: blur(20px); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+  .r-stat .rv { font-size: 28px; font-weight: 800; display: block; }
+  .r-stat .rl { font-size: 11px; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.1em; margin-top: 4px; display: block; }
+  
+  .btn-restart { border: 2px solid #bc13fe; border-radius: 50px; padding: 16px 40px; font-size: 15px; font-weight: 700; color: #bc13fe; background: transparent; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 0 15px rgba(188, 19, 254, 0.2), inset 0 0 10px rgba(188, 19, 254, 0.1); }
+  .btn-restart:hover { background: #bc13fe; color: #fff; box-shadow: 0 0 30px rgba(188, 19, 254, 0.6); transform: translateY(-3px); }
+
+  /* Navigation Dots */
+  .card-indicator { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; position: relative; z-index: 2; max-width: 80%; margin-left: auto; margin-right: auto; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); transition: all 0.4s; }
+  .dot.answered { background: rgba(255, 255, 255, 0.3); }
+  .dot.current { background: #00f3ff; box-shadow: 0 0 10px #00f3ff; width: 20px; border-radius: 4px; }
+  .dot.c { background: #39ff14; box-shadow: 0 0 8px rgba(57, 255, 20, 0.6); }
+  .dot.w { background: #ff00ea; box-shadow: 0 0 8px rgba(255, 0, 234, 0.6); }
+
+  @keyframes cardIn { from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+  @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+  
+  .card-anim { animation: cardIn 0.6s cubic-bezier(0.25, 1, 0.5, 1); }
+  .pop { animation: popIn 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+
+  @media(max-width: 520px) { .card-inner { padding: 24px 20px; } .q-text { font-size: 14px; } .premise, .conclusion { font-size: 13px; } }
+</style>
+</head>
+<body>
+
+<div class="scene" id="scene">
+  <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+
+  <div class="glass-header">
+    <div class="logo-pill"><div class="logo-dot"></div><span class="logo-text">MATHEMATICAL LOGIC</span></div>
+    <h1 class="main-title">Argument Validity</h1>
+    <div class="subtitle">50 flashcards · tap to reveal · self-score</div>
+  </div>
+
+  <div class="score-bar">
+    <div class="score-chip progress"><span class="val" id="sc-progress">1/50</span><span class="lbl">PROGRESS</span></div>
+    <div class="score-chip correct"><span class="val" id="sc-correct">0</span><span class="lbl">CORRECT</span></div>
+    <div class="score-chip wrong"><span class="val" id="sc-wrong">0</span><span class="lbl">WRONG</span></div>
+    <div class="score-chip"><span class="val" id="sc-pct">0%</span><span class="lbl">ACCURACY</span></div>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div class="card-indicator" id="dots"></div>
+
+  <div id="main-game">
+    <div class="flashcard-area" id="fa">
+      <div class="card-wrap card-anim" id="cw" onclick="flipCard()">
+        <div class="card-face card-front glass-card">
+          <div class="shimmer"></div>
+          <div class="card-inner" id="front-inner"></div>
+        </div>
+        <div class="card-face card-back glass-card">
+          <div class="shimmer"></div>
+          <div class="card-inner" id="back-inner"></div>
+        </div>
+        <div id="toast" class="toast"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" id="score-btns" style="display:none">
+      <button class="btn btn-correct" onclick="score(true)">&#10003; Got it right</button>
+      <button class="btn btn-wrong" onclick="score(false)">&#10007; Got it wrong</button>
+    </div>
+    <div class="btn-row" id="flip-row">
+      <button class="btn btn-next" onclick="flipCard()">Reveal answer</button>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevCard()">&#8592; Prev</button>
+      <button class="nav-btn" onclick="shuffleCards()">Shuffle</button>
+      <button class="nav-btn" onclick="nextCard()">Skip &#8594;</button>
+    </div>
+  </div>
+
+  <div class="results-panel" id="results-panel">
+    <div class="results-circle">
+      <span class="results-pct" id="r-pct">0%</span>
+      <span class="results-label">SCORE</span>
+    </div>
+    <div class="results-title" id="r-title">Complete!</div>
+    <div class="results-sub" id="r-sub">Here's how you did</div>
+    <div class="results-grid">
+      <div class="r-stat"><span class="rv" id="r-correct" style="color:#39ff14; text-shadow: 0 0 10px rgba(57, 255, 20, 0.5)">0</span><span class="rl">CORRECT</span></div>
+      <div class="r-stat"><span class="rv" id="r-wrong" style="color:#ff00ea; text-shadow: 0 0 10px rgba(255, 0, 234, 0.5)">0</span><span class="rl">WRONG</span></div>
+      <div class="r-stat"><span class="rv" id="r-skipped" style="color:#00f3ff; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5)">0</span><span class="rl">SKIPPED</span></div>
+    </div>
+    <button class="btn-restart" onclick="restart()">Restart deck</button>
+  </div>
+</div>
+
+<script>
+const CARDS=[
+{q:"P1: All humans are mortal\nP2: Socrates is human\n∴ Socrates is mortal",a:true,rule:"Modus Ponens + Universal Instantiation",exp:"Classic syllogism. P1 gives ∀x(H(x)→M(x)), P2 gives H(Socrates), so M(Socrates) follows."},
+{q:"P1: p → q\nP2: q\n∴ p",a:false,rule:"Fallacy: Affirming the Consequent",exp:"q being true does not mean p caused it. Counterexample: p=F, q=T makes both premises true but conclusion false."},
+{q:"P1: p → q\nP2: p\n∴ q",a:true,rule:"Modus Ponens",exp:"The fundamental inference rule. If the implication holds and the antecedent is true, the consequent must be true."},
+{q:"P1: p → q\nP2: ~q\n∴ ~p",a:true,rule:"Modus Tollens",exp:"If p→q and q is false, then p must be false. Equivalent to using the contrapositive (~q→~p) with P2."},
+{q:"P1: p → q\nP2: ~p\n∴ ~q",a:false,rule:"Fallacy: Denying the Antecedent",exp:"p being false doesn't prevent q from being true via another cause. Counterexample: p=F, q=T makes premises true but conclusion false."},
+{q:"P1: p → q\nP2: q → r\n∴ p → r",a:true,rule:"Hypothetical Syllogism",exp:"Chain rule for conditionals. Transitivity of implication: if p leads to q and q leads to r, then p leads to r."},
+{q:"P1: p ∨ q\nP2: ~p\n∴ q",a:true,rule:"Disjunctive Syllogism",exp:"If at least one of p or q is true, and p is false, then q must be true. Process of elimination."},
+{q:"P1: p ∨ q\nP2: p\n∴ ~q",a:false,rule:"Fallacy: Affirming a Disjunct",exp:"p being true doesn't force q to be false — both could be true (inclusive OR). This is only valid with XOR."},
+{q:"P1: If it rains, roads are wet\nP2: Roads are wet\n∴ It is raining",a:false,rule:"Fallacy: Affirming the Consequent",exp:"Roads could be wet from other causes (flooding, cleaning). The rain → wet roads implication doesn't reverse."},
+{q:"P1: If I study, I pass\nP2: I did not pass\n∴ I did not study",a:true,rule:"Modus Tollens",exp:"~q (did not pass) and p→q (study→pass) gives ~p (did not study) by Modus Tollens."},
+{q:"P1: p → q\nP2: p → r\n∴ p → (q ∧ r)",a:true,rule:"Composition Rule",exp:"If p implies both q and r separately, then p implies their conjunction. Follows from conjunction introduction."},
+{q:"P1: p ∧ q\n∴ p",a:true,rule:"Simplification",exp:"From a conjunction, either conjunct can be extracted. If both p and q are true, certainly p is true."},
+{q:"P1: p\n∴ p ∨ q",a:true,rule:"Addition",exp:"If p is true, then p OR anything is true. This is the rule of Addition (weakening)."},
+{q:"P1: If John is guilty, he was at scene\nP2: John was at the scene\n∴ John is guilty",a:false,rule:"Fallacy: Affirming the Consequent",exp:"Being at the scene is necessary but not sufficient for guilt. Others could also have been at the scene."},
+{q:"P1: All birds fly\nP2: Penguins are birds\n∴ Penguins fly",a:true,rule:"Valid (premises are false, but argument FORM is valid)",exp:"The argument form is valid — the conclusion follows necessarily from the premises. The premises just happen to be false in reality."},
+{q:"P1: p → q\nP2: ~p → r\nP3: ~q\n∴ r",a:true,rule:"Modus Tollens + Modus Ponens",exp:"From P1 and ~q (P3): Modus Tollens gives ~p. Then from P2 (~p→r) and ~p: Modus Ponens gives r."},
+{q:"P1: p ∨ q\nP2: p ∨ ~q\n∴ p",a:true,rule:"Resolution principle",exp:"From p∨q and p∨~q: since q and ~q cover all cases, p must be true in both. This is the resolution rule."},
+{q:"P1: ~p ∨ q  (same as p→q)\nP2: ~q ∨ r  (same as q→r)\n∴ ~p ∨ r  (same as p→r)",a:true,rule:"Hypothetical Syllogism (clause form)",exp:"This is just Hypothetical Syllogism written in disjunctive (clause) form. Resolution of the middle literal q/~q."},
+{q:"P1: If I'm tired I sleep\nP2: If I sleep I miss class\nP3: I am tired\n∴ I miss class",a:true,rule:"Hypothetical Syllogism + Modus Ponens",exp:"P1+P2 by Hyp. Syllogism: tired→miss class. Then P3 (tired) with Modus Ponens gives: miss class."},
+{q:"P1: p → (q → r)\nP2: p\nP3: q\n∴ r",a:true,rule:"Modus Ponens twice",exp:"From P1 and P2 by MP: q→r. Then from q→r and P3 (q) by MP: r. Exportation law confirms p∧q→r."},
+{q:"P1: p ↔ q\nP2: p\n∴ q",a:true,rule:"Biconditional Modus Ponens",exp:"p↔q means p→q AND q→p. With P2 (p), applying the p→q direction gives q."},
+{q:"P1: p ↔ q\nP2: ~p\n∴ ~q",a:true,rule:"Biconditional Modus Tollens",exp:"p↔q means q→p (among other things). ~p with Modus Tollens on q→p gives ~q."},
+{q:"P1: p ↔ q\nP2: q\n∴ ~p",a:false,rule:"Fallacy: Incorrect biconditional use",exp:"p↔q and q gives p (not ~p). The biconditional goes both directions — q implies p, not ~p."},
+{q:"P1: If the light is on, switch is up\nP2: Switch is not up\n∴ Light is not on",a:true,rule:"Modus Tollens",exp:"p→q, ~q ∴ ~p. With p=light on, q=switch up: ~q (switch not up) gives ~p (light not on)."},
+{q:"P1: All cats are mammals\nP2: Some mammals are large\n∴ Some cats are large",a:false,rule:"Fallacy: Undistributed Middle",exp:"The mammals that are large could be a completely different subset from cats. No overlap is guaranteed."},
+{q:"P1: p → q\nP2: q → p\n∴ p ↔ q",a:true,rule:"Biconditional Introduction",exp:"p↔q is defined as (p→q)∧(q→p). Having both implications is exactly the definition of the biconditional."},
+{q:"P1: p ∨ q\nP2: ~q ∨ r\n∴ p ∨ r",a:true,rule:"Resolution",exp:"Resolution rule: from (p∨q) and (~q∨r), resolve on q/~q to get (p∨r). Valid inference in clause logic."},
+{q:"P1: If n is even, n² is even\nP2: n² is not even\n∴ n is not even",a:true,rule:"Modus Tollens (contrapositive)",exp:"p=n even, q=n² even. ~q (n² not even) and p→q gives ~p (n not even) by Modus Tollens."},
+{q:"P1: p → q\nP2: q → p\nP3: p\n∴ q ∧ p",a:true,rule:"Modus Ponens + Conjunction",exp:"From P1 and P3: q. Then q∧p by Conjunction Introduction. P2 is unused (redundant but valid)."},
+{q:"P1: (p ∧ q) → r\nP2: p\nP3: q\n∴ r",a:true,rule:"Modus Ponens with conjunction",exp:"P2∧P3 by Conjunction Introduction gives p∧q. Then (p∧q)→r with p∧q gives r by Modus Ponens."},
+{q:"P1: p → r\nP2: q → r\nP3: p ∨ q\n∴ r",a:true,rule:"Constructive Dilemma",exp:"Case 1: if p (from p∨q), then r via P1. Case 2: if q, then r via P2. Either way r holds. Valid proof by cases."},
+{q:"P1: p → q\nP2: ~p → q\n∴ q",a:true,rule:"Proof by cases / Constructive Dilemma",exp:"Either p or ~p must be true (law of excluded middle). In both cases q follows. So q must be true."},
+{q:"P1: ~p → ~q\nP2: p\n∴ q",a:false,rule:"Fallacy: Denying the Antecedent (of inverse)",exp:"~p→~q is the inverse of q→p. P2 (p) with the inverse ~p→~q tells us nothing about q. ~p→~q is NOT q→p."},
+{q:"P1: ~q → ~p  (contrapositive of p→q)\nP2: p\n∴ q",a:true,rule:"Modus Ponens on contrapositive (= Modus Ponens on original)",exp:"~q→~p is logically equivalent to p→q. Using P2 (p) with p→q by Modus Ponens gives q. Valid."},
+{q:"P1: If a|b and b|c, then a|c\nP2: 2|6 and 6|12\n∴ 2|12",a:true,rule:"Universal Instantiation + Modus Ponens",exp:"Instantiating the universal premise with a=2,b=6,c=12, then MP with P2 gives 2|12. Correct."},
+{q:"P1: p → q\nP2: p → ~q\n∴ ~p",a:true,rule:"Reductio ad absurdum (indirect proof)",exp:"If p were true, then both q and ~q would be true — contradiction. So p must be false. This is a valid RAA argument."},
+{q:"P1: p ∨ (q ∧ r)\nP2: ~p\n∴ q ∧ r",a:true,rule:"Disjunctive Syllogism",exp:"P2 eliminates p from the disjunction, leaving q∧r. Disjunctive Syllogism works on any propositions in the disjunct."},
+{q:"P1: (p → q) ∧ (~p → r)\nP2: ~q\n∴ r",a:true,rule:"Modus Tollens + Modus Ponens",exp:"From p→q and ~q: MT gives ~p. From ~p→r and ~p: MP gives r."},
+{q:"P1: All students who study pass\nP2: Rina did not study\n∴ Rina did not pass",a:false,rule:"Fallacy: Denying the Antecedent",exp:"Rina could pass for other reasons (natural talent, guessing, etc.). Not studying doesn't guarantee failure."},
+{q:"P1: All doctors are graduates\nP2: Dr. Patel is a doctor\n∴ Dr. Patel is a graduate",a:true,rule:"Universal Instantiation + Modus Ponens",exp:"∀x(Doctor(x)→Graduate(x)). Doctor(Patel). By UI and MP: Graduate(Patel). Classic valid categorical syllogism."},
+{q:"P1: p → q\nP2: q → r\nP3: ~r\n∴ ~p",a:true,rule:"Hypothetical Syllogism + Modus Tollens",exp:"P1+P2 by HS: p→r. Then ~r with MT: ~p. Alternatively chain contrapositive: ~r→~q→~p."},
+{q:"P1: If x > 3 then x² > 9\nP2: x = 4\n∴ x² > 9",a:true,rule:"Modus Ponens (instantiated)",exp:"x=4 > 3, so the antecedent is satisfied. By MP, x²=16 > 9. Valid."},
+{q:"P1: If x > 3 then x² > 9\nP2: x² = 16 > 9\n∴ x > 3",a:false,rule:"Fallacy: Affirming the Consequent",exp:"x could be -4: (-4)²=16>9 but -4 is NOT > 3. The consequent being true doesn't imply the antecedent."},
+{q:"P1: p\nP2: ~p ∨ q\n∴ q",a:true,rule:"Modus Ponens (disjunctive form)",exp:"~p∨q is equivalent to p→q. With P1 (p), by MP we get q. The disjunctive and conditional forms are interchangeable."},
+{q:"P1: ~(p ∧ q)\nP2: p\n∴ ~q",a:true,rule:"Modus Ponens via De Morgan",exp:"~(p∧q) ≡ ~p∨~q (De Morgan). With P2 (p), ~p is false, so ~q must be true. Disjunctive Syllogism gives ~q."},
+{q:"P1: p → (q ∨ r)\nP2: p\nP3: ~q\n∴ r",a:true,rule:"MP + Disjunctive Syllogism",exp:"From P1 and P2 by MP: q∨r. Then from q∨r and P3 (~q) by Disjunctive Syllogism: r."},
+{q:"P1: No prime > 2 is even\nP2: n is even and n > 2\n∴ n is not prime",a:true,rule:"Modus Tollens (universal)",exp:"∀x(Prime(x)∧x>2 → Odd(x)). Contrapositive: Even(x)∧x>2 → ¬Prime(x). P2 satisfies antecedent, giving conclusion."},
+{q:"P1: p → q\nP2: ~q → p\nP3: ~p\n∴ q",a:true,rule:"Modus Tollens + Modus Ponens",exp:"From P1 and ~p (if we had it)... wait: P3 gives ~p. From P2 (~q→p) by MT with ~p: ~~q = q. Valid."},
+{q:"P1: p ∨ q ∨ r\nP2: ~p\nP3: ~q\n∴ r",a:true,rule:"Disjunctive Syllogism (extended)",exp:"Apply DS twice: from p∨q∨r and ~p get q∨r. Then from q∨r and ~q get r. Valid chain of eliminations."},
+{q:"P1: (p → q) ∧ (r → s)\nP2: p ∨ r\n∴ q ∨ s",a:true,rule:"Constructive Dilemma",exp:"This is exactly the Constructive Dilemma rule: (p→q)∧(r→s), p∨r ∴ q∨s. Standard valid inference form."}
+];
+
+let idx=0,flipped=false,correct=0,wrong=0,scores={};
+let order=[...Array(CARDS.length).keys()];
+
+function buildDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  const show=Math.min(50,CARDS.length);
+  for(let i=0;i<show;i++){
+    const dot=document.createElement('div');
+    dot.className='dot'+(i===idx?' current':'')+(scores[order[i]]==='c'?' c':scores[order[i]]==='w'?' w':'');
+    d.appendChild(dot);
+  }
+}
+
+function renderCard(){
+  const c=CARDS[order[idx]];
+  const fi=document.getElementById('front-inner');
+  const bi=document.getElementById('back-inner');
+  const lines=c.q.split('\n');
+  const premises=lines.slice(0,-1);
+  const conc=lines[lines.length-1];
+  
+  fi.innerHTML=`
+    <div class="card-tag"><div class="card-tag-dot"></div><span class="card-tag-text">ARGUMENT ${idx+1} OF ${CARDS.length}</span></div>
+    <div class="q-num">Is this argument VALID or INVALID?</div>
+    <div class="q-text">${premises.map(p=>`<div class="premise">${p}</div>`).join('')}<div class="conclusion">${conc}</div></div>
+    <div class="flip-hint">tap card or click button to reveal</div>`;
+    
+  bi.innerHTML=`
+    <div class="answer-tag ${c.a?'valid-tag':'invalid-tag'}">${c.a?'VALID':'INVALID'}</div>
+    <div class="a-title">${c.rule}</div>
+    <div class="a-rule">Logic Rule Applied</div>
+    <div class="a-exp">${c.exp}</div>
+    <div class="flip-hint" style="margin-top:auto">Now score yourself below</div>`;
+    
+  document.getElementById('sc-progress').textContent=`${idx+1}/${CARDS.length}`;
+  document.getElementById('prog-fill').style.width=`${(idx/CARDS.length)*100}%`;
+  
+  const cw=document.getElementById('cw');
+  cw.classList.remove('flipped');
+  flipped=false;
+  
+  document.getElementById('score-btns').style.display='none';
+  document.getElementById('flip-row').style.display='flex';
+  buildDots();
+}
+
+function flipCard(){
+  const cw=document.getElementById('cw');
+  if(!flipped){
+    cw.classList.add('flipped');
+    flipped=true;
+    document.getElementById('score-btns').style.display='flex';
+    document.getElementById('flip-row').style.display='none';
+  }
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(type?'correct-toast':'wrong-toast')+' show';
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function score(isCorrect){
+  const key=order[idx];
+  if(scores[key]==='c') correct--;
+  if(scores[key]==='w') wrong--;
+  scores[key]=isCorrect?'c':'w';
+  
+  if(isCorrect) correct++; else wrong++;
+  
+  document.getElementById('sc-correct').textContent=correct;
+  document.getElementById('sc-wrong').textContent=wrong;
+  
+  const answered=Object.keys(scores).length;
+  const pct=answered>0?Math.round((correct/answered)*100):0;
+  
+  document.getElementById('sc-pct').textContent=pct+'%';
+  
+  document.getElementById('sc-correct').closest('.score-chip').classList.add('pop');
+  setTimeout(()=>document.getElementById('sc-correct').closest('.score-chip').classList.remove('pop'),300);
+  
+  showToast(isCorrect?'Correct! +1':'Marked wrong',isCorrect);
+  
+  setTimeout(()=>{
+    if(idx<CARDS.length-1){idx++;renderCard();}
+    else showResults();
+  },700);
+}
+
+function nextCard(){
+  if(idx<CARDS.length-1){idx++;renderCard();}
+  else showResults();
+}
+function prevCard(){if(idx>0){idx--;renderCard();}}
+
+function shuffleCards(){
+  for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+  idx=0;scores={};correct=0;wrong=0;
+  document.getElementById('sc-correct').textContent=0;
+  document.getElementById('sc-wrong').textContent=0;
+  document.getElementById('sc-pct').textContent='0%';
+  renderCard();
+  showToast('Deck shuffled!',true);
+}
+
+function showResults(){
+  document.getElementById('main-game').style.display='none';
+  document.getElementById('dots').style.display='none';
+  const panel=document.getElementById('results-panel');
+  panel.style.display='block';
+  const total=Object.keys(scores).length;
+  const pct=total>0?Math.round((correct/total)*100):0;
+  const skipped=CARDS.length-total;
+  document.getElementById('r-pct').textContent=pct+'%';
+  document.getElementById('r-correct').textContent=correct;
+  document.getElementById('r-wrong').textContent=wrong;
+  document.getElementById('r-skipped').textContent=skipped;
+  const titles=['Keep practicing!','Getting there!','Good work!','Great job!','Excellent!','Logic master!'];
+  const ti=Math.floor(pct/20);
+  document.getElementById('r-title').textContent=titles[Math.min(ti,5)];
+  document.getElementById('r-sub').textContent=`${correct} correct out of ${total} answered`;
+}
+
+function restart(){
+  idx=0;correct=0;wrong=0;scores={};
+  order=[...Array(CARDS.length).keys()];
+  document.getElementById('sc-correct').textContent=0;
+  document.getElementById('sc-wrong').textContent=0;
+  document.getElementById('sc-pct').textContent='0%';
+  document.getElementById('main-game').style.display='block';
+  document.getElementById('dots').style.display='flex';
+  document.getElementById('results-panel').style.display='none';
+  renderCard();
+}
+
+renderCard();
+
+document.addEventListener('mousemove',function(e){
+  const orbs=document.querySelectorAll('.orb');
+  const cx=e.clientX/window.innerWidth-.5;
+  const cy=e.clientY/window.innerHeight-.5;
+  orbs[0].style.transform=`translate(${cx*40}px,${cy*30}px) scale(1)`;
+  orbs[1].style.transform=`translate(${cx*-30}px,${cy*40}px) scale(1)`;
+  orbs[2].style.transform=`translate(${cx*35}px,${cy*-25}px) scale(1)`;
+});
+</script>
+</body>
+</html>
